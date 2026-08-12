@@ -1,35 +1,120 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>MyMarket Uganda</title><link rel="stylesheet" href="styles.css?v=2">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MyMarket Uganda | Shop Online</title>
+<link rel="stylesheet" href="styles.css?v=2">
 </head>
+
 <body>
+
 <header>
-  <div class="brand">🛒 <span>MyMarket</span><small>UGANDA</small></div>
-  <div class="search"><input id="search" placeholder="Search products, brands and categories"><button onclick="loadProducts()">Search</button></div>
-  <nav><button onclick="showPage('shop')">Shop</button><button onclick="showPage('seller')">Sell</button><button onclick="showPage('admin')">Admin</button><button onclick="openLogin()">Login</button><button class="cart" onclick="openCart()">🛒 <b id="cartCount">0</b></button></nav>
+  <div class="brand">
+    🛒 <span>MyMarket</span><small>UGANDA</small>
+  </div>
+
+  <div class="search">
+    <input id="search" placeholder="Search products, brands and categories">
+    <button onclick="loadProducts()">Search</button>
+  </div>
+
+  <nav>
+    <button onclick="showPage('shop')">Shop</button>
+    <button onclick="showPage('seller')">Sell</button>
+    <button onclick="showPage('admin')">Admin</button>
+    <button onclick="openLogin()">Login</button>
+    <button class="cart" onclick="openCart()">🛒 <b id="cartCount">0</b></button>
+  </nav>
 </header>
 
 <section id="hero" class="hero">
-  <div><p class="eyebrow">SHOP LOCAL. BUY SMART.</p><h1>Uganda's marketplace for everyone.</h1><p>Phones, electronics, solar, fashion, home products and more.</p><button class="primary" onclick="document.getElementById('products').scrollIntoView()">Start Shopping</button></div>
-  <div class="hero-card">🇺🇬<strong>Built for Uganda</strong><span>Mobile-friendly • Seller-ready • Delivery-ready</span></div>
+
+  <div>
+    <p class="eyebrow">🇺🇬 SHOP LOCAL • BUY SMART</p>
+
+    <h1>Everything you need, delivered across Uganda.</h1>
+
+    <p>
+      Discover phones, electronics, solar products, fashion,
+      home items and more from Ugandan sellers.
+    </p>
+
+    <button class="primary"
+      onclick="document.getElementById('products').scrollIntoView()">
+      Start Shopping →
+    </button>
+  </div>
+
+  <div class="hero-card">
+    🇺🇬
+    <strong>Built for Uganda</strong>
+    <span>Local sellers • Local prices • Local delivery</span>
+  </div>
+
 </section>
 
 <main id="shop">
-  <div class="section-head"><h2>Shop by category</h2><div id="categories"></div></div>
+
+  <div class="section-head">
+    <div>
+      <p class="eyebrow" style="color:#1769e0">EXPLORE</p>
+      <h2>Shop by category</h2>
+    </div>
+
+    <div id="categories"></div>
+  </div>
+
+  <section style="margin:30px 0 18px">
+    <h2>🔥 Featured Products</h2>
+    <p style="color:#687386">
+      Popular products available from MyMarket sellers.
+    </p>
+  </section>
+
   <div id="products" class="grid"></div>
+
 </main>
 
 <section id="seller" class="portal hidden">
-  <h2>Seller Office</h2><div id="sellerPanel"></div>
+
+  <h2>🏪 Seller Office</h2>
+
+  <p style="color:#687386">
+    Manage your products and orders from one place.
+  </p>
+
+  <div id="sellerPanel"></div>
+
 </section>
 
 <section id="admin" class="portal hidden">
-  <h2>Admin Office</h2><div id="adminPanel"></div>
+
+  <h2>⚙️ Admin Office</h2>
+
+  <p style="color:#687386">
+    Manage MyMarket Uganda operations.
+  </p>
+
+  <div id="adminPanel"></div>
+
 </section>
 
 <div id="modal" class="modal hidden"></div>
-<footer><strong>MyMarket Uganda</strong><span>Marketplace platform • Uganda</span><span>Domain can be connected later: mymarket.ug</span></footer>
+
+<footer>
+
+  <strong>🛒 MyMarket Uganda</strong>
+
+  <span>Marketplace platform for Uganda</span>
+
+  <span>Phones • Electronics • Solar • Fashion • Home</span>
+
+  <span>© 2026 MyMarket Uganda</span>
+
+</footer>
+
 <script src="app.js"></script>
-</body></html>
+
+</body>
+</html>
