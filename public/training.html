@@ -257,32 +257,20 @@ async function loadTrainingSettings() {
 
   }
 
-  function optimizeProduct() {
+  function simulateDeposit() {
 
-    if (task >= 40) return;
+  balance += trainingSettings.demoDeposit;
 
-    task++;
+  document.getElementById("negativeCard")
+    .classList.add("hidden");
 
-    /*
-      At 39/40 we intentionally demonstrate
-      the negative-balance mechanism.
-    */
+  task = 40;
 
-    if (task === 39) {
+  document.getElementById("completedCard")
+    .classList.remove("hidden");
 
-      balance = -30000;
-
-      document.getElementById("negativeBalance").textContent =
-        formatMoney(balance);
-
-      document.getElementById("negativeCard")
-        .classList.remove("hidden");
-
-      document.getElementById("taskCard")
-        .classList.add("hidden");
-
-      updateDisplay();
-
+  updateDisplay();
+  }
       return;
     }
 
