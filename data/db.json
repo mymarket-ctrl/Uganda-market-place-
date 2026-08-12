@@ -1,0 +1,62 @@
+{
+  "users": [
+    {
+      "id": "u_admin",
+      "name": "MyMarket Admin",
+      "email": "admin@mymarket.ug",
+      "password": "admin123",
+      "role": "admin"
+    },
+    {
+      "id": "u_seller",
+      "name": "Demo Electronics",
+      "email": "seller@mymarket.ug",
+      "password": "seller123",
+      "role": "seller",
+      "shop": "Demo Electronics Uganda"
+    }
+  ],
+  "products": [
+    {
+      "id": "p1",
+      "name": "Samsung Galaxy A15",
+      "category": "Phones",
+      "price": 699000,
+      "stock": 12,
+      "sellerId": "u_seller",
+      "image": "📱",
+      "active": true
+    },
+    {
+      "id": "p2",
+      "name": "Solar Home Kit 100W",
+      "category": "Solar",
+      "price": 320000,
+      "stock": 20,
+      "sellerId": "u_seller",
+      "image": "☀️",
+      "active": true
+    },
+    {
+      "id": "p3",
+      "name": "Bluetooth Speaker",
+      "category": "Electronics",
+      "price": 85000,
+      "stock": 30,
+      "sellerId": "u_seller",
+      "image": "🔊",
+      "active": true
+    },
+    {
+      "id": "p4",
+      "name": "Men's Sneakers",
+      "category": "Fashion",
+      "price": 120000,
+      "stock": 18,
+      "sellerId": "u_seller",
+      "image": "👟",
+      "active": true
+    }
+  ],
+  "orders": []
+}
