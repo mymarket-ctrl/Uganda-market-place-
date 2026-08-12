@@ -215,9 +215,21 @@
   </div>
 
 <script>
+let task = 0;
+let balance = 0;
 
-  let task = 0;
-  let balance = 100000;
+let trainingSettings = null;
+
+async function loadTrainingSettings() {
+  const response = await fetch("/api/training/settings");
+  const data = await response.json();
+
+  trainingSettings = data.training;
+
+  balance = trainingSettings.startingBalance;
+
+  updateDisplay();
+  }
 
   const products = [
     "Bluetooth Speaker",
