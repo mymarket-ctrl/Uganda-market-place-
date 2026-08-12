@@ -29,8 +29,6 @@ body{
   line-height:1.5;
 }
 
-/* HEADER */
-
 header{
   position:sticky;
   top:0;
@@ -67,8 +65,6 @@ header{
   margin-top:18px;
 }
 
-/* SEARCH */
-
 .search{
   display:flex;
   flex:1;
@@ -100,8 +96,6 @@ header{
   border-radius:0 9px 9px 0;
   font-weight:800;
 }
-
-/* NAVIGATION */
 
 nav{
   display:flex;
@@ -140,8 +134,6 @@ nav button{
   border-radius:20px;
   margin-left:3px;
 }
-
-/* HERO */
 
 .hero{
   margin:22px auto;
@@ -217,8 +209,6 @@ nav button{
   color:#dbeafe;
 }
 
-/* MAIN */
-
 main,
 .portal{
   max-width:1200px;
@@ -239,8 +229,6 @@ main,
   font-size:25px;
 }
 
-/* CATEGORIES */
-
 #categories{
   display:flex;
   gap:7px;
@@ -258,8 +246,6 @@ main,
   border-color:var(--orange);
   color:var(--orange-dark);
 }
-
-/* PRODUCTS */
 
 .grid{
   display:grid;
@@ -325,8 +311,6 @@ main,
   background:var(--blue);
 }
 
-/* PORTALS */
-
 .portal{
   background:#fff;
   border-radius:16px;
@@ -343,8 +327,6 @@ main,
 .hidden{
   display:none!important;
 }
-
-/* DASHBOARD */
 
 .stats{
   display:grid;
@@ -366,8 +348,6 @@ main,
   color:var(--navy);
 }
 
-/* TABLES */
-
 .table{
   width:100%;
   border-collapse:collapse;
@@ -388,8 +368,6 @@ main,
   border-bottom:1px solid var(--border);
   font-size:14px;
 }
-
-/* MODAL */
 
 .modal{
   position:fixed;
@@ -471,8 +449,6 @@ main,
   color:var(--danger);
 }
 
-/* FOOTER */
-
 footer{
   margin-top:60px;
   padding:38px 5%;
@@ -492,8 +468,6 @@ footer span{
   color:#cbd5e1;
   font-size:13px;
 }
-
-/* MOBILE */
 
 @media(max-width:700px){
 
@@ -596,4 +570,3 @@ footer span{
     gap:10px;
   }
   }
-  
