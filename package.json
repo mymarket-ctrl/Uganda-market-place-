@@ -1,0 +1,9 @@
+{
+  "name": "mymarket-uganda",
+  "version": "0.1.0",
+  "private": true,
+  "description": "MyMarket Uganda - marketplace starter with customer, seller and admin portals",
+  "main": "server.js",
+  "scripts": { "start": "node server.js", "dev": "node server.js" },
+  "engines": { "node": ">=18" }
+}
