@@ -165,43 +165,43 @@ async function api(req,res,url){
     return json(res,200,{customers:db.users.filter(u=>u.role==="customer").length,sellers:db.users.filter(u=>u.role==="seller").length,products:db.products.length,orders:db.orders.length,revenue});
   }
   // TRAINING: get settings
-  if(req.method==="GET" && url.pathname==="/api/training/settings"){
-    return json(res,200,{training:db.training});
+if(req.method==="GET" && url.pathname==="/api/training/settings"){
+  return json(res,200,{training:db.training});
+}
+
+// TRAINING: update settings
+if(req.method==="POST" && url.pathname==="/api/training/settings"){
+  const b=await body(req);
+
+  if(!db.training){
+    return json(res,500,{error:"Training settings not found"});
   }
 
-  // TRAINING: update settings (demo values only)
-  if(req.method==="POST" && url.pathname==="/api/training/settings"){
-    const b=await body(req);
+  if(b.startingBalance !== undefined)
+    db.training.startingBalance=Number(b.startingBalance);
 
-    if(!db.training){
-      return json(res,500,{error:"Training settings not found"});
-    }
+  if(b.negativeTask !== undefined)
+    db.training.negativeTask=Number(b.negativeTask);
 
-    if(b.startingBalance !== undefined)
-      db.training.startingBalance=Number(b.startingBalance);
+  if(b.negativeBalance !== undefined)
+    db.training.negativeBalance=Number(b.negativeBalance);
 
-    if(b.negativeTask !== undefined)
-      db.training.negativeTask=Number(b.negativeTask);
+  if(b.demoDeposit !== undefined)
+    db.training.demoDeposit=Number(b.demoDeposit);
 
-    if(b.negativeBalance !== undefined)
-      db.training.negativeBalance=Number(b.negativeBalance);
+  if(b.commissionPerTask !== undefined)
+    db.training.commissionPerTask=Number(b.commissionPerTask);
 
-    if(b.demoDeposit !== undefined)
-      db.training.demoDeposit=Number(b.demoDeposit);
+  if(Array.isArray(b.products) && b.products.length===40)
+    db.training.products=b.products;
 
-    if(b.commissionPerTask !== undefined)
-      db.training.commissionPerTask=Number(b.commissionPerTask);
+  writeDB(db);
 
-    if(Array.isArray(b.products) && b.products.length===40)
-      db.training.products=b.products;
-
-    writeDB(db);
-
-    return json(res,200,{
-      message:"Training settings updated",
-      training:db.training
-    });
-  }
+  return json(res,200,{
+    message:"Training settings updated",
+    training:db.training
+  });
+}
   return json(res,404,{error:"Not found"});
 }
 
