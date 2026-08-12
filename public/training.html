@@ -1,552 +1,404 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>40/40 Product Optimization Training</title>
-  <link rel="stylesheet" href="/styles.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>40/40 Product Optimization Training</title>
+<link rel="stylesheet" href="/styles.css">
 
-  <style>
-    .training-wrap {
-      max-width: 700px;
-      margin: 30px auto;
-      padding: 20px;
-    }
-
-    .demo-warning {
-      background: #fff3cd;
-      border: 1px solid #ffc107;
-      padding: 14px;
-      border-radius: 10px;
-      margin-bottom: 20px;
-      font-weight: 600;
-    }
-
-    .training-card {
-      background: white;
-      padding: 20px;
-      border-radius: 14px;
-      box-shadow: 0 2px 10px rgba(0,0,0,.08);
-      margin-bottom: 15px;
-    }
-
-    .balance {
-      font-size: 28px;
-      font-weight: bold;
-      margin: 10px 0;
-    }
-
-    .progress {
-      background: #eee;
-      height: 12px;
-      border-radius: 10px;
-      overflow: hidden;
-      margin: 15px 0;
-    }
-
-    .progress-bar {
-      height: 100%;
-      width: 0%;
-      background: #198754;
-    }
-
-    button {
-      border: none;
-      padding: 12px 18px;
-      border-radius: 8px;
-      cursor: pointer;
-      font-weight: bold;
-    }
-
-    .optimize-btn {
-      background: #198754;
-      color: white;
-      width: 100%;
-    }
-
-    .deposit-btn {
-      background: #0d6efd;
-      color: white;
-      width: 100%;
-      margin-top: 10px;
-    }
-
-    .negative {
-      color: #dc3545;
-    }
-
-    .success {
-      color: #198754;
-    }
-
-    .hidden {
-      display: none;
-    }
-
-    .lesson {
-      background: #f8f9fa;
-      padding: 18px;
-      border-radius: 10px;
-      margin-top: 20px;
-    }
-  </style>
+<style>
+.training-wrap {
+  max-width:700px;
+  margin:30px auto;
+  padding:20px;
+}
+.demo-warning {
+  background:#fff3cd;
+  border:1px solid #ffc107;
+  padding:14px;
+  border-radius:10px;
+  margin-bottom:20px;
+  font-weight:600;
+}
+.training-card {
+  background:white;
+  padding:20px;
+  border-radius:14px;
+  box-shadow:0 2px 10px rgba(0,0,0,.08);
+  margin-bottom:15px;
+}
+.balance {
+  font-size:28px;
+  font-weight:bold;
+  margin:10px 0;
+}
+.progress {
+  background:#eee;
+  height:12px;
+  border-radius:10px;
+  overflow:hidden;
+  margin:15px 0;
+}
+.progress-bar {
+  height:100%;
+  width:0%;
+  background:#198754;
+}
+button {
+  border:none;
+  padding:12px 18px;
+  border-radius:8px;
+  cursor:pointer;
+  font-weight:bold;
+}
+.optimize-btn {
+  background:#198754;
+  color:white;
+  width:100%;
+}
+.deposit-btn {
+  background:#0d6efd;
+  color:white;
+  width:100%;
+  margin-top:10px;
+}
+.negative {
+  color:#dc3545;
+}
+.success {
+  color:#198754;
+}
+.hidden {
+  display:none;
+}
+.lesson {
+  background:#f8f9fa;
+  padding:18px;
+  border-radius:10px;
+  margin-top:20px;
+}
+</style>
 </head>
 
 <body>
 
-  <div class="training-wrap">
+<div class="training-wrap">
 
-    <h1>40/40 Product Optimization</h1>
+<h1>40/40 Product Optimization</h1>
 
-    <div class="demo-warning">
-      ⚠️ TRAINING SIMULATION ONLY<br>
-      All balances, deposits and commissions shown here are DEMO values.
-      No real money is accepted or withdrawable.
-    </div>
+<div class="demo-warning">
+⚠️ TRAINING SIMULATION ONLY<br>
+All balances, deposits and commissions shown here are DEMO values.
+No real money is accepted or withdrawable.
+</div>
 
-    <div class="training-card">
+<div class="training-card">
+<h2>Demo Wallet</h2>
+<div id="balance" class="balance">Loading...</div>
+<p>Starting demo balance</p>
+</div>
 
-      <h2>Demo Wallet</h2>
+<div class="training-card">
+<h2>Progress</h2>
+<strong id="progressText">0/40</strong>
 
-      <div id="balance" class="balance">
-        UGX 100,000
-      </div>
+<div class="progress">
+<div id="progressBar" class="progress-bar"></div>
+</div>
+</div>
 
-      <p>Starting demo balance</p>
+<div id="taskCard" class="training-card">
 
-    </div>
+<h2 id="productName">Loading product...</h2>
 
-    <div class="training-card">
+<p>
+Optimize the product listing to continue.
+</p>
 
-      <h2>Progress</h2>
+<button
+id="optimizeButton"
+class="optimize-btn"
+onclick="optimizeProduct()">
+OPTIMIZE PRODUCT
+</button>
 
-      <strong id="progressText">0/40</strong>
+</div>
 
-      <div class="progress">
-        <div id="progressBar" class="progress-bar"></div>
-      </div>
+<div id="negativeCard" class="training-card hidden">
 
-    </div>
+<h2 class="negative">
+⚠️ Negative Balance Scenario
+</h2>
 
-    <div id="taskCard" class="training-card">
+<p>
+You have reached <strong id="negativeTaskText">39/40</strong>.
+</p>
 
-      <h2 id="productName">Product Optimization</h2>
+<p>
+Demo balance:
+<strong id="negativeBalance">UGX 0</strong>
+</p>
 
-      <p id="productDescription">
-        Optimize the product listing to continue.
-      </p>
+<p>
+This is a demonstration of how some task schemes create pressure
+to deposit money after showing a negative balance.
+</p>
 
-      <button
-        id="optimizeButton"
-        class="optimize-btn"
-        onclick="optimizeProduct()">
-        OPTIMIZE PRODUCT
-      </button>
+<button
+id="depositButton"
+class="deposit-btn"
+onclick="simulateDeposit()">
+SIMULATE DEPOSIT
+</button>
 
-    </div>
+</div>
 
-    <div id="negativeCard" class="training-card hidden">
+<div id="completedCard" class="training-card hidden">
 
-      <h2 class="negative">⚠️ Negative Balance Scenario</h2>
+<h2 class="success">
+🎉 40/40 Completed
+</h2>
 
-      <p>
-        You have reached <strong>39/40</strong>.
-      </p>
+<p>
+You have completed the demonstration.
+</p>
 
-      <p>
-        Demo balance:
-        <strong id="negativeBalance">UGX -30,000</strong>
-      </p>
+<button
+class="deposit-btn"
+onclick="showLesson()">
+VIEW AWARENESS LESSON
+</button>
 
-      <p>
-        The simulation now asks for a deposit before the final task.
-      </p>
+</div>
 
-      <button
-        class="deposit-btn"
-        onclick="simulateDeposit()">
-        SIMULATE DEPOSIT — UGX 50,000
-      </button>
+<div id="lesson" class="lesson hidden">
 
-    </div>
+<h2>⚠️ Awareness Lesson</h2>
 
-    <div id="completedCard" class="training-card hidden">
+<p>
+This demonstration shows how a product-optimization task scheme
+can create pressure to deposit money after displaying a negative
+balance.
+</p>
 
-      <h2 class="success">🎉 40/40 Completed</h2>
+<p>
+In a real situation, never assume that a displayed commission or
+balance is genuine simply because it appears inside an app.
+</p>
 
-      <p>
-        You have completed the demonstration.
-      </p>
+<p>
+Never send money merely to unlock tasks or withdraw supposed
+earnings without independently verifying the business.
+</p>
 
-      <button
-        class="deposit-btn"
-        onclick="showLesson()">
-        VIEW AWARENESS LESSON
-      </button>
+<strong>
+This simulator contains no real deposits or withdrawable funds.
+</strong>
 
-    </div>
+</div>
 
-    <div id="lesson" class="lesson hidden">
-
-      <h2>⚠️ Awareness Lesson</h2>
-
-      <p>
-        This demonstration shows how a product-optimization task scheme
-        can create pressure to deposit money after displaying a negative
-        balance.
-      </p>
-
-      <p>
-        In a real situation, never assume that a displayed commission or
-        balance is genuine simply because it appears inside an app.
-      </p>
-
-      <p>
-        Never send money merely to unlock tasks or withdraw supposed
-        earnings without independently verifying the business.
-      </p>
-
-      <strong>
-        This simulator contains no real deposits or withdrawable funds.
-      </strong>
-
-    </div>
-
-  </div>
+</div>
 
 <script>
-let task = 0;
-let balance = 0;
 
-let trainingSettings = null;
-
-async function loadTrainingSettings() {
-  const response = await fetch("/api/training/settings");
-  const data = await response.json();
-
-  trainingSettings = data.training;
-
-  balance = trainingSettings.startingBalance;
-
-  updateDisplay();
-  }
-
-  let products = [];
-
-  function formatMoney(amount) {
-    return "UGX " + Number(amount).toLocaleString();
-  }
-
-  function updateDisplay() {
-
-    document.getElementById("balance").textContent =
-      formatMoney(balance);
-
-    document.getElementById("progressText").textContent =
-      task + "/40";
-
-    document.getElementById("progressBar").style.width =
-      ((task / 40) * 100) + "%";
-
-    if (task < 40) {
-
-      document.getElementById("productName").textContent =
-        products[task];
-
-    }
-
-  }
-
-  function simulateDeposit() {
-
-  balance += trainingSettings.demoDeposit;
-
-  document.getElementById("negativeCard")
-    .classList.add("hidden");
-
-  task = 40;
-
-  document.getElementById("completedCard")
-    .classList.remove("hidden");
-
-  updateDisplay();
-  }
-      return;
-    }
-
-    if (task === 40) {
-
-      document.getElementById("taskCard")
-        .classList.add("hidden");
-
-      document.getElementById("completedCard")
-        .classList.remove("hidden");
-
-    }
-
-    updateDisplay();
-  }
-
-  function simulateDeposit() {
-
-    /*
-      TRAINING ONLY.
-      This does NOT process a real payment.
-    */
-
-    balance += 50000;
-
-    document.getElementById("negativeCard")
-      .classList.add("hidden");
-
-    task = 40;
-
-    document.getElementById("completedCard")
-      .classList.remove("hidden");
-
-    updateDisplay();
-  }
-
-  function showLesson() {
-
-    document.getElementById("lesson")
-      .classList.remove("hidden");
-
-  }
-
-  loadTrainingSettings();
-
-<script>
 let task = 0;
 let balance = 0;
 let trainingSettings = null;
 let products = [];
 
+
 async function loadTrainingSettings() {
+
   try {
-    const response = await fetch("/api/training/settings");
-    const data = await response.json();
 
-    trainingSettings = data.training;
-    products = trainingSettings.products;
-    balance = trainingSettings.startingBalance;
+    const response =
+      await fetch("/api/training/settings");
 
-    document.getElementById("negativeCard").classList.add("hidden");
-    document.getElementById("completedCard").classList.add("hidden");
-    document.getElementById("taskCard").classList.remove("hidden");
+    const data =
+      await response.json();
 
-    document.getElementById("negativeBalance").textContent =
-      formatMoney(trainingSettings.negativeBalance);
+    trainingSettings =
+      data.training;
 
-    document.querySelector(".deposit-btn").textContent =
-      "SIMULATE DEPOSIT — " + formatMoney(trainingSettings.demoDeposit);
+    products =
+      trainingSettings.products;
+
+    balance =
+      trainingSettings.startingBalance;
+
+    document.getElementById(
+      "negativeTaskText"
+    ).textContent =
+      trainingSettings.negativeTask + "/40";
+
+    document.getElementById(
+      "negativeBalance"
+    ).textContent =
+      formatMoney(
+        trainingSettings.negativeBalance
+      );
+
+    document.getElementById(
+      "depositButton"
+    ).textContent =
+      "SIMULATE DEPOSIT — " +
+      formatMoney(
+        trainingSettings.demoDeposit
+      );
 
     updateDisplay();
 
-  } catch (error) {
+  } catch(error) {
+
     console.error(error);
-    document.getElementById("balance").textContent =
+
+    document.getElementById(
+      "balance"
+    ).textContent =
       "Unable to load training";
+
   }
+
 }
 
+
 function formatMoney(amount) {
-  return "UGX " + Number(amount).toLocaleString();
+
+  return "UGX " +
+    Number(amount).toLocaleString();
+
 }
+
 
 function updateDisplay() {
 
-  document.getElementById("balance").textContent =
+  document.getElementById(
+    "balance"
+  ).textContent =
     formatMoney(balance);
 
-  document.getElementById("progressText").textContent =
+  document.getElementById(
+    "progressText"
+  ).textContent =
     task + "/40";
 
-  document.getElementById("progressBar").style.width =
+  document.getElementById(
+    "progressBar"
+  ).style.width =
     ((task / 40) * 100) + "%";
 
-  if (task < 40 && products[task]) {
-    document.getElementById("productName").textContent =
+  if(task < 40 && products[task]) {
+
+    document.getElementById(
+      "productName"
+    ).textContent =
       products[task];
+
   }
+
 }
+
 
 function optimizeProduct() {
 
-  if (!trainingSettings || task >= 40) {
+  if(!trainingSettings) {
+    return;
+  }
+
+  if(task >= 40) {
     return;
   }
 
   task++;
 
-  if (task === trainingSettings.negativeTask) {
+  if(
+    task ===
+    trainingSettings.negativeTask
+  ) {
 
-    balance = trainingSettings.negativeBalance;
+    balance =
+      trainingSettings.negativeBalance;
 
-    document.getElementById("negativeBalance").textContent =
+    document.getElementById(
+      "negativeBalance"
+    ).textContent =
       formatMoney(balance);
 
-    document.getElementById("taskCard").classList.add("hidden");
-    document.getElementById("negativeCard").classList.remove("hidden");
+    document.getElementById(
+      "taskCard"
+    ).classList.add("hidden");
+
+    document.getElementById(
+      "negativeCard"
+    ).classList.remove("hidden");
 
     updateDisplay();
+
     return;
   }
 
-  if (task === 40) {
 
-    document.getElementById("taskCard").classList.add("hidden");
-    document.getElementById("completedCard").classList.remove("hidden");
+  if(task === 40) {
+
+    document.getElementById(
+      "taskCard"
+    ).classList.add("hidden");
+
+    document.getElementById(
+      "completedCard"
+    ).classList.remove("hidden");
 
     updateDisplay();
+
     return;
   }
 
   updateDisplay();
+
 }
+
 
 function simulateDeposit() {
 
-  if (!trainingSettings) {
+  if(!trainingSettings) {
     return;
   }
 
-  // DEMO ONLY — no real payment is processed.
-  balance += trainingSettings.demoDeposit;
+  /*
+    DEMO ONLY.
+    No real payment is processed.
+  */
+
+  balance +=
+    trainingSettings.demoDeposit;
 
   task = 40;
 
-  document.getElementById("negativeCard").classList.add("hidden");
-  document.getElementById("completedCard").classList.remove("hidden");
+  document.getElementById(
+    "negativeCard"
+  ).classList.add("hidden");
+
+  document.getElementById(
+    "completedCard"
+  ).classList.remove("hidden");
 
   updateDisplay();
+
 }
+
 
 function showLesson() {
-  document.getElementById("lesson").classList.remove("hidden");
+
+  document.getElementById(
+    "lesson"
+  ).classList.remove("hidden");
+
 }
+
 
 loadTrainingSettings();
-<script>
-let task = 0;
-let balance = 0;
-let trainingSettings = null;
-let products = [];
 
-async function loadTrainingSettings() {
-  try {
-    const response = await fetch("/api/training/settings");
-    const data = await response.json();
-
-    trainingSettings = data.training;
-    products = trainingSettings.products;
-    balance = trainingSettings.startingBalance;
-
-    document.getElementById("negativeCard").classList.add("hidden");
-    document.getElementById("completedCard").classList.add("hidden");
-    document.getElementById("taskCard").classList.remove("hidden");
-
-    document.getElementById("negativeBalance").textContent =
-      formatMoney(trainingSettings.negativeBalance);
-
-    document.querySelector(".deposit-btn").textContent =
-      "SIMULATE DEPOSIT — " + formatMoney(trainingSettings.demoDeposit);
-
-    updateDisplay();
-
-  } catch (error) {
-    console.error(error);
-    document.getElementById("balance").textContent =
-      "Unable to load training";
-  }
-}
-
-function formatMoney(amount) {
-  return "UGX " + Number(amount).toLocaleString();
-}
-
-function updateDisplay() {
-
-  document.getElementById("balance").textContent =
-    formatMoney(balance);
-
-  document.getElementById("progressText").textContent =
-    task + "/40";
-
-  document.getElementById("progressBar").style.width =
-    ((task / 40) * 100) + "%";
-
-  if (task < 40 && products[task]) {
-    document.getElementById("productName").textContent =
-      products[task];
-  }
-}
-
-function optimizeProduct() {
-
-  if (!trainingSettings || task >= 40) {
-    return;
-  }
-
-  task++;
-
-  if (task === trainingSettings.negativeTask) {
-
-    balance = trainingSettings.negativeBalance;
-
-    document.getElementById("negativeBalance").textContent =
-      formatMoney(balance);
-
-    document.getElementById("taskCard").classList.add("hidden");
-    document.getElementById("negativeCard").classList.remove("hidden");
-
-    updateDisplay();
-    return;
-  }
-
-  if (task === 40) {
-
-    document.getElementById("taskCard").classList.add("hidden");
-    document.getElementById("completedCard").classList.remove("hidden");
-
-    updateDisplay();
-    return;
-  }
-
-  updateDisplay();
-}
-
-function simulateDeposit() {
-
-  if (!trainingSettings) {
-    return;
-  }
-
-  // DEMO ONLY — no real payment is processed.
-  balance += trainingSettings.demoDeposit;
-
-  task = 40;
-
-  document.getElementById("negativeCard").classList.add("hidden");
-  document.getElementById("completedCard").classList.remove("hidden");
-
-  updateDisplay();
-}
-
-function showLesson() {
-  document.getElementById("lesson").classList.remove("hidden");
-}
-
-loadTrainingSettings();
-document.getElementById("negativeCard").classList.add("hidden");
-  document.getElementById("completedCard").classList.remove("hidden");
-
-  updateDisplay();
-}
-
-function showLesson() {
-  document.getElementById("lesson").classList.remove("hidden");
-}
-
-loadTrainingSettings();
 </script>
+
+</body>
+</html>
