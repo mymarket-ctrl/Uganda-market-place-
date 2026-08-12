@@ -20,7 +20,7 @@ const seed = {
     {id:"p3", name:"Bluetooth Speaker", category:"Electronics", price:85000, stock:30, sellerId:"u_seller", image:"🔊", active:true},
     {id:"p4", name:"Men's Sneakers", category:"Fashion", price:120000, stock:18, sellerId:"u_seller", image:"👟", active:true}
   ],
-  orders: []training: {
+  orders: [],training: {
   startingBalance: 100000,
   negativeTask: 39,
   negativeBalance: -30000,
