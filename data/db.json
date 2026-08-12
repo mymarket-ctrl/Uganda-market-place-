@@ -60,7 +60,7 @@
   ],
   "orders": [],
   "training": {
-    "startingBalance": 100000,
+    "startingBalance": 200000,
     "negativeTask": 39,
     "negativeBalance": -30000,
     "demoDeposit": 50000,
