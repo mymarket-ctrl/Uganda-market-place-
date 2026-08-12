@@ -20,7 +20,55 @@ const seed = {
     {id:"p3", name:"Bluetooth Speaker", category:"Electronics", price:85000, stock:30, sellerId:"u_seller", image:"🔊", active:true},
     {id:"p4", name:"Men's Sneakers", category:"Fashion", price:120000, stock:18, sellerId:"u_seller", image:"👟", active:true}
   ],
-  orders: []
+  orders: []training: {
+  startingBalance: 100000,
+  negativeTask: 39,
+  negativeBalance: -30000,
+  demoDeposit: 50000,
+  commissionPerTask: 2500,
+  products: [
+    "Bluetooth Speaker",
+    "Phone Charger",
+    "Solar Lamp",
+    "Wireless Earbuds",
+    "Smart Watch",
+    "LED Bulb",
+    "Power Bank",
+    "USB Cable",
+    "Electric Kettle",
+    "Phone Holder",
+    "Mini Fan",
+    "Smart TV",
+    "Laptop Stand",
+    "Security Camera",
+    "Bluetooth Headphones",
+    "Ring Light",
+    "Extension Cable",
+    "Solar Panel",
+    "Table Lamp",
+    "Electric Iron",
+    "Keyboard",
+    "Computer Mouse",
+    "Memory Card",
+    "WiFi Router",
+    "Projector",
+    "Smartphone",
+    "Microphone",
+    "Tripod",
+    "Gaming Controller",
+    "LED Strip",
+    "Hair Dryer",
+    "Blender",
+    "Electric Cooker",
+    "Power Inverter",
+    "Rechargeable Fan",
+    "Vacuum Cleaner",
+    "Digital Scale",
+    "Air Cooler",
+    "Smart Doorbell",
+    "Smart TV Accessory"
+  ]
+}
 };
 
 if (!fs.existsSync(DB)) fs.writeFileSync(DB, JSON.stringify(seed, null, 2));
