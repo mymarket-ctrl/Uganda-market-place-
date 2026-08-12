@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MyMarket - Training Admin</title>
+  <link rel="stylesheet" href="/styles.css">
+
+  <style>
+    .admin-wrap {
+      max-width: 800px;
+      margin: 25px auto;
+      padding: 20px;
+    }
+
+    .admin-card {
+      background: #fff;
+      padding: 20px;
+      margin-bottom: 18px;
+      border-radius: 12px;
+      box-shadow: 0 2px 10px rgba(0,0,0,.08);
+    }
+
+    .warning {
+      background: #fff3cd;
+      border: 1px solid #ffc107;
+      padding: 15px;
+      border-radius: 10px;
+      margin-bottom: 20px;
+    }
+
+    label {
+      display: block;
+      margin-top: 12px;
+      font-weight: bold;
+    }
+
+    input {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 11px;
+      margin-top: 5px;
+      border: 1px solid #ccc;
+      border-radius: 7px;
+    }
+
+    .save-btn {
+      margin-top: 20px;
+      width: 100%;
+      padding: 13px;
+      background: #198754;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .product-row {
+      margin-bottom: 10px;
+    }
+
+    #message {
+      margin-top: 15px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="admin-wrap">
+
+  <h1>40/40 Training Admin</h1>
+
+  <div class="warning">
+    ⚠️ <strong>TRAINING SIMULATION</strong><br>
+    These settings control demo values only.
+    This page does not process real deposits or withdrawals.
+  </div>
+
+  <div class="admin-card">
+
+    <h2>Training Settings</h2>
+
+    <label>Starting Demo Balance</label>
+    <input id="startingBalance" type="number">
+
+    <label>Negative Task Number</label>
+    <input id="negativeTask" type="number" min="1" max="40">
+
+    <label>Negative Demo Balance</label>
+    <input id="negativeBalance" type="number">
+
+    <label>Simulated Deposit</label>
+    <input id="demoDeposit" type="number">
+
+    <label>Commission Per Task</label>
+    <input id="commissionPerTask" type="number">
+
+  </div>
+
+  <div class="admin-card">
+
+    <h2>40 Training Products</h2>
+
+    <div id="products"></div>
+
+  </div>
+
+  <button class="save-btn" onclick="saveSettings()">
+    SAVE TRAINING SETTINGS
+  </button>
+
+  <div id="message"></div>
+
+</div>
+
+<script>
+
+async function loadSettings() {
+
+  try {
+
+    const response =
+      await fetch("/api/training/settings");
+
+    const data = await response.json();
+
+    const t = data.training;
+
+    document.getElementById("startingBalance").value =
+      t.startingBalance;
+
+    document.getElementById("negativeTask").value =
+      t.negativeTask;
+
+    document.getElementById("negativeBalance").value =
+      t.negativeBalance;
+
+    document.getElementById("demoDeposit").value =
+      t.demoDeposit;
+
+    document.getElementById("commissionPerTask").value =
+      t.commissionPerTask;
+
+    const container =
+      document.getElementById("products");
+
+    container.innerHTML = "";
+
+    t.products.forEach((product, index) => {
+
+      const row = document.createElement("div");
+
+      row.className = "product-row";
+
+      row.innerHTML = `
+        <label>Product ${index + 1}</label>
+        <input
+          class="product-input"
+          value="${escapeHtml(product)}"
+        >
+      `;
+
+      container.appendChild(row);
+
+    });
+
+  } catch (error) {
+
+    document.getElementById("message").textContent =
+      "Unable to load training settings.";
+
+  }
+
+}
+
+function escapeHtml(value) {
+
+  return String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+
+}
+
+async function saveSettings() {
+
+  const products =
+    Array.from(
+      document.querySelectorAll(".product-input")
+    ).map(input => input.value.trim());
+
+  if (products.length !== 40) {
+
+    document.getElementById("message").textContent =
+      "You must have exactly 40 products.";
+
+    return;
+
+  }
+
+  const settings = {
+
+    startingBalance:
+      Number(document.getElementById("startingBalance").value),
+
+    negativeTask:
+      Number(document.getElementById("negativeTask").value),
+
+    negativeBalance:
+      Number(document.getElementById("negativeBalance").value),
+
+    demoDeposit:
+      Number(document.getElementById("demoDeposit").value),
+
+    commissionPerTask:
+      Number(document.getElementById("commissionPerTask").value),
+
+    products
+
+  };
+
+  try {
+
+    const response = await fetch(
+      "/api/training/settings",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(settings)
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+
+      throw new Error(
+        data.error || "Save failed"
+      );
+
+    }
+
+    document.getElementById("message").textContent =
+      "✅ Training settings saved successfully.";
+
+  } catch (error) {
+
+    document.getElementById("message").textContent =
+      "❌ " + error.message;
+
+  }
+
+}
+
+loadSettings();
+
+</script>
+
+</body>
+  </html>
