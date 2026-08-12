@@ -316,7 +316,237 @@ async function loadTrainingSettings() {
 
   loadTrainingSettings();
 
-</script>
+<script>
+let task = 0;
+let balance = 0;
+let trainingSettings = null;
+let products = [];
 
-</body>
-      </html>
+async function loadTrainingSettings() {
+  try {
+    const response = await fetch("/api/training/settings");
+    const data = await response.json();
+
+    trainingSettings = data.training;
+    products = trainingSettings.products;
+    balance = trainingSettings.startingBalance;
+
+    document.getElementById("negativeCard").classList.add("hidden");
+    document.getElementById("completedCard").classList.add("hidden");
+    document.getElementById("taskCard").classList.remove("hidden");
+
+    document.getElementById("negativeBalance").textContent =
+      formatMoney(trainingSettings.negativeBalance);
+
+    document.querySelector(".deposit-btn").textContent =
+      "SIMULATE DEPOSIT — " + formatMoney(trainingSettings.demoDeposit);
+
+    updateDisplay();
+
+  } catch (error) {
+    console.error(error);
+    document.getElementById("balance").textContent =
+      "Unable to load training";
+  }
+}
+
+function formatMoney(amount) {
+  return "UGX " + Number(amount).toLocaleString();
+}
+
+function updateDisplay() {
+
+  document.getElementById("balance").textContent =
+    formatMoney(balance);
+
+  document.getElementById("progressText").textContent =
+    task + "/40";
+
+  document.getElementById("progressBar").style.width =
+    ((task / 40) * 100) + "%";
+
+  if (task < 40 && products[task]) {
+    document.getElementById("productName").textContent =
+      products[task];
+  }
+}
+
+function optimizeProduct() {
+
+  if (!trainingSettings || task >= 40) {
+    return;
+  }
+
+  task++;
+
+  if (task === trainingSettings.negativeTask) {
+
+    balance = trainingSettings.negativeBalance;
+
+    document.getElementById("negativeBalance").textContent =
+      formatMoney(balance);
+
+    document.getElementById("taskCard").classList.add("hidden");
+    document.getElementById("negativeCard").classList.remove("hidden");
+
+    updateDisplay();
+    return;
+  }
+
+  if (task === 40) {
+
+    document.getElementById("taskCard").classList.add("hidden");
+    document.getElementById("completedCard").classList.remove("hidden");
+
+    updateDisplay();
+    return;
+  }
+
+  updateDisplay();
+}
+
+function simulateDeposit() {
+
+  if (!trainingSettings) {
+    return;
+  }
+
+  // DEMO ONLY — no real payment is processed.
+  balance += trainingSettings.demoDeposit;
+
+  task = 40;
+
+  document.getElementById("negativeCard").classList.add("hidden");
+  document.getElementById("completedCard").classList.remove("hidden");
+
+  updateDisplay();
+}
+
+function showLesson() {
+  document.getElementById("lesson").classList.remove("hidden");
+}
+
+loadTrainingSettings();
+<script>
+let task = 0;
+let balance = 0;
+let trainingSettings = null;
+let products = [];
+
+async function loadTrainingSettings() {
+  try {
+    const response = await fetch("/api/training/settings");
+    const data = await response.json();
+
+    trainingSettings = data.training;
+    products = trainingSettings.products;
+    balance = trainingSettings.startingBalance;
+
+    document.getElementById("negativeCard").classList.add("hidden");
+    document.getElementById("completedCard").classList.add("hidden");
+    document.getElementById("taskCard").classList.remove("hidden");
+
+    document.getElementById("negativeBalance").textContent =
+      formatMoney(trainingSettings.negativeBalance);
+
+    document.querySelector(".deposit-btn").textContent =
+      "SIMULATE DEPOSIT — " + formatMoney(trainingSettings.demoDeposit);
+
+    updateDisplay();
+
+  } catch (error) {
+    console.error(error);
+    document.getElementById("balance").textContent =
+      "Unable to load training";
+  }
+}
+
+function formatMoney(amount) {
+  return "UGX " + Number(amount).toLocaleString();
+}
+
+function updateDisplay() {
+
+  document.getElementById("balance").textContent =
+    formatMoney(balance);
+
+  document.getElementById("progressText").textContent =
+    task + "/40";
+
+  document.getElementById("progressBar").style.width =
+    ((task / 40) * 100) + "%";
+
+  if (task < 40 && products[task]) {
+    document.getElementById("productName").textContent =
+      products[task];
+  }
+}
+
+function optimizeProduct() {
+
+  if (!trainingSettings || task >= 40) {
+    return;
+  }
+
+  task++;
+
+  if (task === trainingSettings.negativeTask) {
+
+    balance = trainingSettings.negativeBalance;
+
+    document.getElementById("negativeBalance").textContent =
+      formatMoney(balance);
+
+    document.getElementById("taskCard").classList.add("hidden");
+    document.getElementById("negativeCard").classList.remove("hidden");
+
+    updateDisplay();
+    return;
+  }
+
+  if (task === 40) {
+
+    document.getElementById("taskCard").classList.add("hidden");
+    document.getElementById("completedCard").classList.remove("hidden");
+
+    updateDisplay();
+    return;
+  }
+
+  updateDisplay();
+}
+
+function simulateDeposit() {
+
+  if (!trainingSettings) {
+    return;
+  }
+
+  // DEMO ONLY — no real payment is processed.
+  balance += trainingSettings.demoDeposit;
+
+  task = 40;
+
+  document.getElementById("negativeCard").classList.add("hidden");
+  document.getElementById("completedCard").classList.remove("hidden");
+
+  updateDisplay();
+}
+
+function showLesson() {
+  document.getElementById("lesson").classList.remove("hidden");
+}
+
+loadTrainingSettings();
+document.getElementById("negativeCard").classList.add("hidden");
+  document.getElementById("completedCard").classList.remove("hidden");
+
+  updateDisplay();
+}
+
+function showLesson() {
+  document.getElementById("lesson").classList.remove("hidden");
+}
+
+loadTrainingSettings();
+</script>
