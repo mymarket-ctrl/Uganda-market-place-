@@ -354,6 +354,44 @@ if(req.method==="POST" && url.pathname==="/api/training/admin-clear"){
     message:"Training settings updated",
     training:db.training
   });
+} // TRAINING: start a new optimization cycle
+if(req.method==="POST" && url.pathname==="/api/training/new-cycle"){
+  const b=await body(req);
+  const userId=String(b.userId||"");
+
+  if(!userId)
+    return json(res,400,{error:"userId is required"});
+
+  if(!db.trainingUsers)
+    db.trainingUsers=[];
+
+  const t=db.trainingUsers.find(x=>x.userId===userId);
+
+  if(!t)
+    return json(res,404,{
+      error:"Training record not found"
+    });
+
+  if(t.status!=="completed")
+    return json(res,400,{
+      error:"The current cycle has not been completed."
+    });
+
+  t.cycle++;
+  t.balance=0;
+  t.commission=0;
+  t.progress=0;
+  t.status="active";
+  t.negativeAmount=0;
+  t.depositRequired=0;
+  t.depositApproved=false;
+
+  writeDB(db);
+
+  return json(res,200,{
+    message:"New demo cycle started from UGX 0.",
+    training:t
+  });
 }
   return json(res,404,{error:"Not found"});
 }
