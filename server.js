@@ -312,13 +312,21 @@ if(req.method==="POST" && url.pathname==="/api/training/admin-clear"){
 
   /*
     Demo-only administrative clearance.
-    No real payment is processed by this endpoint.
+     real payment is processed by this endpoint.
   */
-  t.balance=0;
-  t.depositApproved=true;
-  t.depositRequired=0;
-  t.negativeAmount=0;
-  t.status="active";
+const demoBalance = Number(b.demoBalance || 50000);
+
+if(demoBalance <= 0){
+  return json(res,400,{
+    error:"Demo balance must be greater than zero"
+  });
+}
+
+t.balance = demoBalance;
+t.depositApproved = true;
+t.depositRequired = 0;
+t.negativeAmount = 0;
+t.status = "active";
 
   writeDB(db);
 
