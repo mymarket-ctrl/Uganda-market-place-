@@ -250,34 +250,55 @@ if(!admin){
 
   t.progress++;
 
-  // Commission is simulated demo value.
-  const commission=Number(db.training.commissionPerTask||2500);
-  t.commission+=commission;
-  t.balance+=commission;
+// Commission earned for this demo optimization.
+const commission =
+  Number(db.training.commissionPerTask || 2500);
 
-  // Dynamic simulated negative event.
-  // It is never greater than the configured maximum deposit.
-  const negativeOptions=[5000,10000,15000,20000,25000,30000];
-  const negative=negativeOptions[
-    Math.floor(Math.random()*negativeOptions.length)
+t.commission += commission;
+t.balance += commission;
+
+
+/*
+  DEMO NEGATIVE SCENARIO
+
+  The negative event happens only at 39/40.
+  The amount varies and is never greater than UGX 30,000.
+*/
+if(t.progress === 39){
+
+  const negativeOptions = [
+    5000,
+    10000,
+    20000,
+    30000
   ];
 
-  /*
-    The negative event is simulated and clearly separated
-    from the trainee's commission.
-  */
-  if(t.progress<40 && Math.random()<0.12){
-    t.balance-=negative;
-    t.negativeAmount=negative;
-    t.depositRequired=negative;
-    t.depositApproved=false;
-    t.status="waiting_admin";
-  }
+  const negative =
+    negativeOptions[
+      Math.floor(Math.random() * negativeOptions.length)
+    ];
 
-  if(t.progress===40){
-    t.status="completed";
-    t.completedCycles++;
-  }
+  t.balance -= negative;
+
+  t.negativeAmount = negative;
+  t.depositRequired = negative;
+  t.depositApproved = false;
+  t.status = "waiting_admin";
+}
+
+
+/*
+  40/40 COMPLETED
+
+  The cycle ends here.
+  The final demo balance is NOT automatically changed
+  to UGX 200,000.
+*/
+if(t.progress === 40){
+
+  t.status = "completed";
+  t.completedCycles++;
+}
 
   writeDB(db);
 
