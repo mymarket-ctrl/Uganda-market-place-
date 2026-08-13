@@ -173,106 +173,148 @@ START NEW CYCLE FROM UGX 0
 </button>
 
 </div>
-
-<script>
-
-let task = 0;
-let balance = 0;
+let trainingState = null;
 let trainingSettings = null;
 let products = [];
 
+function getUser() {
+  try {
+    return JSON.parse(
+      localStorage.getItem("mymarket_user") || "null"
+    );
+  } catch (e) {
+    return null;
+  }
+}
 
-async function loadTrainingSettings() {
+function formatMoney(amount) {
+  return "UGX " + Number(amount || 0).toLocaleString();
+}
+
+async function loadTraining() {
+
+  const user = getUser();
+
+  if (!user || !user.id) {
+    document.getElementById("balance").textContent =
+      "Please log in first";
+    return;
+  }
 
   try {
 
-    const response =
+    const settingsResponse =
       await fetch("/api/training/settings");
 
-    const data =
-      await response.json();
+    const settingsData =
+      await settingsResponse.json();
 
-    trainingSettings =
-      data.training;
+    trainingSettings = settingsData.training;
+    products = trainingSettings.products || [];
 
-    products =
-      trainingSettings.products;
-
-    balance =200000
-      trainingSettings.startingBalance;
-
-    document.getElementById(
-      "negativeTaskText"
-    ).textContent =
-      trainingSettings.negativeTask + "/40";
-
-    document.getElementById(
-      "negativeBalance"
-    ).textContent =
-      formatMoney(
-        trainingSettings.negativeBalance
+    const stateResponse =
+      await fetch(
+        "/api/training/state?userId=" +
+        encodeURIComponent(user.id)
       );
 
-    document.getElementById(
-      "depositButton"
-    ).textContent =
-      "SIMULATE DEPOSIT — " +
-      formatMoney(
-        trainingSettings.demoDeposit
-      );
+    const stateData =
+      await stateResponse.json();
+
+    trainingState = stateData.training;
 
     updateDisplay();
 
-  } catch(error) {
+  } catch (error) {
 
     console.error(error);
 
-    document.getElementById(
-      "balance"
-    ).textContent =
+    document.getElementById("balance").textContent =
       "Unable to load training";
-
   }
-
 }
-
-
-function formatMoney(amount) {
-
-  return "UGX " +
-    Number(amount).toLocaleString();
-
-}
-
 
 function updateDisplay() {
 
-  document.getElementById(
-    "balance"
-  ).textContent =
+  if (!trainingState) return;
+
+  const task = Number(trainingState.progress || 0);
+  const balance = Number(trainingState.balance || 0);
+
+  document.getElementById("balance").textContent =
     formatMoney(balance);
 
-  document.getElementById(
-    "progressText"
-  ).textContent =
+  document.getElementById("progressText").textContent =
     task + "/40";
 
-  document.getElementById(
-    "progressBar"
-  ).style.width =
+  document.getElementById("progressBar").style.width =
     ((task / 40) * 100) + "%";
 
-  if(task < 40 && products[task]) {
-
-    document.getElementById(
-      "productName"
-    ).textContent =
+  if (task < 40 && products[task]) {
+    document.getElementById("productName").textContent =
       products[task];
-
   }
 
-}
+  if (trainingState.status === "waiting_admin") {
 
+    document.getElementById("taskCard")
+      .classList.add("hidden");
+
+    document.getElementById("negativeCard")
+      .classList.remove("hidden");
+
+    document.getElementById("negativeTaskText")
+      .textContent = task + "/40";
+
+    document.getElementById("negativeBalance")
+      .textContent = formatMoney(balance);
+
+    return;
+  }
+
+  if (trainingState.status === "completed") {
+
+    document.getElementById("taskCard")
+      .classList.add("hidden");
+
+    document.getElementById("negativeCard")
+      .classList.add("hidden");
+
+    document.getElementById("completedCard")
+      .classList.remove("hidden");
+
+    return;
+  }
+
+  document.getElementById("taskCard")
+    .classList.remove("hidden");
+
+  document.getElementById("negativeCard")
+    .classList.add("hidden");
+
+  document.getElementById("completedCard")
+    .classList.add("hidden");
+
+  const oldNotice =
+    document.getElementById("finalDepositNotice");
+
+  if (oldNotice) oldNotice.remove();
+
+  if (task === 39) {
+
+    document.getElementById("taskCard").insertAdjacentHTML(
+      "beforeend",
+      `
+      <p id="finalDepositNotice" class="negative">
+        A maximum deposit of UGX
+        ${Number(trainingSettings.maxDeposit || 30000).toLocaleString()}
+        may be required to complete optimization to 40/40.
+        Please contact the administrator if the system requests it.
+      </p>
+      `
+    );
+  }
+}
 
 async function optimizeProduct() {
 
@@ -336,103 +378,67 @@ async function optimizeProduct() {
 
     console.error(error);
 
-    alert(
-      "Unable to connect to the training server."
-    );
+    alert("Unable to connect to the training server.");
 
   } finally {
 
     button.disabled = false;
     button.textContent = "OPTIMIZE PRODUCT";
-
   }
-  }
+}
 
+async function startNewCycle() {
 
-  if(
-    task ===
-    trainingSettings.negativeTask
-  ) {
+  const user = getUser();
 
-    balance =
-      trainingSettings.negativeBalance;
-
-    document.getElementById(
-      "negativeBalance"
-    ).textContent =
-      formatMoney(balance);
-
-    document.getElementById(
-      "taskCard"
-    ).classList.add("hidden");
-
-    document.getElementById(
-      "negativeCard"
-    ).classList.remove("hidden");
-
-    updateDisplay();
-
+  if (!user || !user.id) {
+    alert("Please log in first.");
     return;
   }
 
+  const confirmed =
+    confirm("Start a new optimization cycle from UGX 0?");
 
-  if(task === 40) {
+  if (!confirmed) return;
 
-    document.getElementById(
-      "taskCard"
-    ).classList.add("hidden");
+  try {
 
-    document.getElementById(
-      "completedCard"
-    ).classList.remove("hidden");
+    const response = await fetch(
+      "/api/training/new-cycle",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          userId: user.id
+        })
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      alert(data.error || "Unable to start a new cycle.");
+      return;
+    }
+
+    trainingState = data.training;
 
     updateDisplay();
 
-    return;
+  } catch (error) {
+
+    console.error(error);
+
+    alert("Unable to start a new cycle.");
   }
-
-  updateDisplay();
-
 }
 
+loadTraining();
 
 
-
-  /*
-    DEMO ONLY.
-     real payment is processed.
-  */
-
-  balance +=
-    trainingSettings.demoDeposit;
-
-  task = 40;
-
-  document.getElementById(
-    "negativeCard"
-  ).classList.add("hidden");
-
-  document.getElementById(
-    "completedCard"
-  ).classList.remove("hidden");
-
-  updateDisplay();
-
-}
-
-
-function showLesson() {
-
-  document.getElementById(
-    "lesson"
-  ).classList.remove("hidden");
-
-}
-
-
-loadTrainingSettings();
-
-</script>
+  
 
 </body>
 </html>
