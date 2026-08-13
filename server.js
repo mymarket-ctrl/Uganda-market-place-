@@ -20,13 +20,13 @@ const seed = {
     {id:"p3", name:"Bluetooth Speaker", category:"Electronics", price:85000, stock:30, sellerId:"u_seller", image:"🔊", active:true},
     {id:"p4", name:"Men's Sneakers", category:"Fashion", price:120000, stock:18, sellerId:"u_seller", image:"👟", active:true}
   ],
-  orders: [],training: {
-  startingBalance: 100000,
-  negativeTask: 39,
-  negativeBalance: -30000,
-  demoDeposit: 50000,
+  orders: [],
+training: {
+  startingBalance: 0,
+  totalTasks: 40,
+  maxDeposit: 30000,
   commissionPerTask: 2500,
-  products: [
+  products: [trainingUsers: []
     "Bluetooth Speaker",
     "Phone Charger",
     "Solar Lamp",
@@ -173,7 +173,150 @@ if(req.method==="GET" && url.pathname==="/api/training/settings"){
 if(req.method==="POST" && url.pathname==="/api/training/settings"){
   const b=await body(req);
 
-  if(!db.training){
+  if(!db.training){// TRAINING: trainee state
+if(req.method==="GET" && url.pathname==="/api/training/state"){
+  const userId=url.searchParams.get("userId");
+  if(!userId) return json(res,400,{error:"userId is required"});
+
+  let t=db.trainingUsers.find(x=>x.userId===userId);
+
+  if(!t){
+    t={
+      userId,
+      balance:0,
+      commission:0,
+      progress:0,
+      status:"active",
+      negativeAmount:0,
+      depositRequired:0,
+      depositApproved:false,
+      cycle:1,
+      completedCycles:0
+    };
+    db.trainingUsers.push(t);
+    writeDB(db);
+  }
+
+  return json(res,200,{training:t});
+}
+
+// TRAINING: optimize one product
+if(req.method==="POST" && url.pathname==="/api/training/optimize"){
+  const b=await body(req);
+  const userId=String(b.userId||"");
+
+  if(!userId)
+    return json(res,400,{error:"userId is required"});
+
+  let t=db.trainingUsers.find(x=>x.userId===userId);
+
+  if(!t){
+    t={
+      userId,
+      balance:0,
+      commission:0,
+      progress:0,
+      status:"active",
+      negativeAmount:0,
+      depositRequired:0,
+      depositApproved:false,
+      cycle:1,
+      completedCycles:0
+    };
+    db.trainingUsers.push(t);
+  }
+
+  if(t.status==="completed")
+    return json(res,400,{error:"Cycle completed. Start a new cycle."});
+
+  if(t.status==="waiting_admin")
+    return json(res,400,{
+      error:"Admin action required",
+      depositRequired:t.depositRequired
+    });
+
+  if(t.progress>=40)
+    return json(res,400,{error:"Optimization already completed"});
+
+  t.progress++;
+
+  // Commission is simulated demo value.
+  const commission=Number(db.training.commissionPerTask||2500);
+  t.commission+=commission;
+  t.balance+=commission;
+
+  // Dynamic simulated negative event.
+  // It is never greater than the configured maximum deposit.
+  const negativeOptions=[5000,10000,15000,20000,25000,30000];
+  const negative=negativeOptions[
+    Math.floor(Math.random()*negativeOptions.length)
+  ];
+
+  /*
+    The negative event is simulated and clearly separated
+    from the trainee's commission.
+  */
+  if(t.progress<40 && Math.random()<0.12){
+    t.balance-=negative;
+    t.negativeAmount=negative;
+    t.depositRequired=negative;
+    t.depositApproved=false;
+    t.status="waiting_admin";
+  }
+
+  if(t.progress===40){
+    t.status="completed";
+    t.completedCycles++;
+  }
+
+  writeDB(db);
+
+  return json(res,200,{
+    message:t.status==="waiting_admin"
+      ? "Optimization paused. Please contact the administrator."
+      : t.progress===40
+        ? "Optimization completed 40/40."
+        : "Optimization successful.",
+    training:t
+  });
+}// TRAINING: admin clears simulated deposit requirement
+if(req.method==="POST" && url.pathname==="/api/training/admin-clear"){
+  const b=await body(req);
+  const userId=String(b.userId||"");
+
+  if(!userId)
+    return json(res,400,{error:"userId is required"});
+
+  const t=db.trainingUsers.find(x=>x.userId===userId);
+
+  if(!t)
+    return json(res,404,{error:"Trainee training record not found"});
+
+  if(t.status!=="waiting_admin")
+    return json(res,400,{error:"No admin action is currently required"});
+
+  const required=Number(t.depositRequired||0);
+
+  if(required<=0 || required>Number(db.training.maxDeposit||30000))
+    return json(res,400,{error:"Invalid deposit requirement"});
+
+  /*
+    Demo-only administrative clearance.
+    No real payment is processed by this endpoint.
+  */
+  t.balance=0;
+  t.depositApproved=true;
+  t.depositRequired=0;
+  t.negativeAmount=0;
+  t.status="active";
+
+  writeDB(db);
+
+  return json(res,200,{
+    message:"Demo deposit cleared by administrator.",
+    training:t
+  });
+}
     return json(res,500,{error:"Training settings not found"});
   }
 
