@@ -274,17 +274,80 @@ function updateDisplay() {
 }
 
 
-function optimizeProduct() {
+async function optimizeProduct() {
 
-  if(!trainingSettings) {
+  const user = getUser();
+
+  if (!user || !user.id) {
+    alert("Please log in first.");
     return;
   }
 
-  if(task >= 40) {
+  if (!trainingState) {
+    alert("Training is still loading.");
     return;
   }
 
-  task++;
+  if (trainingState.status === "waiting_admin") {
+    alert("Please contact the administrator.");
+    return;
+  }
+
+  if (trainingState.status === "completed") {
+    alert(
+      "This optimization cycle is complete. Start a new cycle if you want to train again."
+    );
+    return;
+  }
+
+  const button =
+    document.getElementById("optimizeButton");
+
+  button.disabled = true;
+  button.textContent = "OPTIMIZING...";
+
+  try {
+
+    const response = await fetch(
+      "/api/training/optimize",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          userId: user.id
+        })
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      alert(data.error || "Optimization failed.");
+      return;
+    }
+
+    trainingState = data.training;
+
+    updateDisplay();
+
+  } catch (error) {
+
+    console.error(error);
+
+    alert(
+      "Unable to connect to the training server."
+    );
+
+  } finally {
+
+    button.disabled = false;
+    button.textContent = "OPTIMIZE PRODUCT";
+
+  }
+  }
+
 
   if(
     task ===
