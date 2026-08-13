@@ -114,7 +114,23 @@
 <a href="/training.html"
    style="display:block;text-align:center;margin-top:15px;font-weight:bold;">
   🎓 OPEN TRAINEE TRAINING
-</a>
+</a><div class="admin-card">
+
+  <h2>👤 Trainee Clearance</h2>
+
+  <p>
+    Trainees who reach a negative demo balance will appear here.
+  </p>
+
+  <button
+    class="save-btn"
+    onclick="loadTrainees()">
+    LOAD TRAINEES
+  </button>
+
+  <div id="trainees"></div>
+
+</div>
   <div id="message"></div>
 
 </div>
@@ -262,9 +278,179 @@ async function saveSettings() {
 
 }
 
-loadSettings();
+async function loadTrainees() {
 
-</script>
+  try {
+
+    const response =
+      await fetch("/api/training/admin-trainees");
+
+    const data =
+      await response.json();
+
+    if (!response.ok) {
+      alert(data.error || "Unable to load trainees.");
+      return;
+    }
+
+    const container =
+      document.getElementById("trainees");
+
+    container.innerHTML = "";
+
+    if (!data.trainees || data.trainees.length === 0) {
+
+      container.innerHTML =
+        "<p>No trainees currently require clearance.</p>";
+
+      return;
+    }
+
+    data.trainees.forEach(t => {
+
+      const card =
+        document.createElement("div");
+
+      card.className = "admin-card";
+
+      card.innerHTML = `
+        <h3>Trainee</h3>
+
+        <p>
+          <strong>User ID:</strong>
+          ${escapeHtml(t.userId)}
+        </p>
+
+        <p>
+          <strong>Progress:</strong>
+          ${t.progress}/40
+        </p>
+
+        <p>
+          <strong>Demo Balance:</strong>
+          UGX ${Number(t.balance || 0).toLocaleString()}
+        </p>
+
+        <p>
+          <strong>Negative Amount:</strong>
+          UGX ${Number(t.negativeAmount || 0).toLocaleString()}
+        </p>
+
+        <p>
+          <strong>Status:</strong>
+          ${escapeHtml(t.status || "active")}
+        </p>
+
+        ${
+          t.status === "waiting_admin"
+          ? `
+            <label>
+              Demo balance after admin clearance
+            </label>
+
+            <input
+              id="clearBalance-${escapeHtml(t.userId)}"
+              type="number"
+              value="50000"
+              min="1"
+            >
+
+            <button
+              class="save-btn"
+              onclick="clearTrainee('${escapeHtml(t.userId)}')">
+              CLEAR NEGATIVE & CONTINUE
+            </button>
+          `
+          : ""
+        }
+      `;
+
+      container.appendChild(card);
+
+    });
+
+  } catch(error) {
+
+    console.error(error);
+
+    alert(
+      "Unable to connect to the training server."
+    );
+
+  }
+}
+
+
+async function clearTrainee(userId) {
+
+  const input =
+    document.getElementById(
+      "clearBalance-" + userId
+    );
+
+  const demoBalance =
+    Number(input.value);
+
+  if (!demoBalance || demoBalance <= 0) {
+
+    alert(
+      "Enter a valid demo balance."
+    );
+
+    return;
+  }
+
+  try {
+
+    const response =
+      await fetch(
+        "/api/training/admin-clear",
+        {
+          method: "POST",
+
+          headers: {
+            "Content-Type":
+              "application/json"
+          },
+
+          body: JSON.stringify({
+            userId: userId,
+            demoBalance: demoBalance
+          })
+        }
+      );
+
+    const data =
+      await response.json();
+
+    if (!response.ok) {
+
+      alert(
+        data.error ||
+        "Unable to clear trainee."
+      );
+
+      return;
+    }
+
+    alert(
+      "✅ Negative demo requirement cleared. Trainee can continue to 40/40."
+    );
+
+    loadTrainees();
+
+  } catch(error) {
+
+    console.error(error);
+
+    alert(
+      "Unable to connect to the server."
+    );
+  }
+}
+
+
+loadSettings();
 
 </body>
   </html>
