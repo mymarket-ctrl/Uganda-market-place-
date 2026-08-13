@@ -288,7 +288,27 @@ if(!admin){
         ? "Optimization completed 40/40."
         : "Optimization successful.",
     training:t
+  });// TRAINING: admin view of trainees
+if(req.method==="GET" && url.pathname==="/api/training/admin-trainees"){
+  const adminEmail =
+    String(url.searchParams.get("adminEmail") || "").toLowerCase();
+
+  const admin = db.users.find(
+    u =>
+      u.email.toLowerCase() === adminEmail &&
+      u.role === "admin"
+  );
+
+  if(!admin){
+    return json(res,403,{
+      error:"Administrator authorization required"
+    });
+  }
+
+  return json(res,200,{
+    trainees: db.trainingUsers || []
   });
+                                    }
 }// TRAINING: admin clears simulated deposit requirement
 if(req.method==="POST" && url.pathname==="/api/training/admin-clear"){
   const b=await body(req);
