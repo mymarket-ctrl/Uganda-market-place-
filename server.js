@@ -204,7 +204,17 @@ if(req.method==="GET" && url.pathname==="/api/training/state"){
 if(req.method==="POST" && url.pathname==="/api/training/optimize"){
   const b=await body(req);
   const userId=String(b.userId||"");
+const adminEmail=String(b.adminEmail||"").toLowerCase();
 
+const admin=db.users.find(
+  u=>u.email.toLowerCase()===adminEmail && u.role==="admin"
+);
+
+if(!admin){
+  return json(res,403,{
+    error:"Administrator authorization required"
+  });
+}
   if(!userId)
     return json(res,400,{error:"userId is required"});
 
