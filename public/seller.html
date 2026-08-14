@@ -8,10 +8,11 @@
 
 <style>
 .wrap{
-  max-width:1000px;
+  max-width:1100px;
   margin:25px auto;
   padding:20px;
 }
+
 .card{
   background:#fff;
   padding:20px;
@@ -19,21 +20,25 @@
   margin-bottom:20px;
   box-shadow:0 2px 10px rgba(0,0,0,.08);
 }
+
 .grid{
   display:grid;
   grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
   gap:15px;
 }
+
 .stat{
   padding:18px;
   background:#f8f9fa;
   border-radius:10px;
 }
+
 .stat strong{
   display:block;
   font-size:25px;
   margin-top:5px;
 }
+
 input,select{
   width:100%;
   box-sizing:border-box;
@@ -42,6 +47,7 @@ input,select{
   border:1px solid #ccc;
   border-radius:7px;
 }
+
 button{
   border:0;
   padding:11px 16px;
@@ -49,28 +55,99 @@ button{
   cursor:pointer;
   font-weight:bold;
 }
+
 .primary{
   background:#198754;
   color:white;
 }
-.danger{
-  background:#dc3545;
-  color:white;
-}
+
 table{
   width:100%;
   border-collapse:collapse;
+  min-width:750px;
 }
+
 th,td{
   padding:10px;
   border-bottom:1px solid #ddd;
   text-align:left;
+  vertical-align:top;
 }
+
+th{
+  background:#f8f9fa;
+}
+
 .message{
   margin-top:10px;
   font-weight:bold;
 }
+
 .small{
+  color:#666;
+}
+
+.order-box{
+  border:1px solid #ddd;
+  border-radius:10px;
+  padding:15px;
+  margin-bottom:15px;
+  background:#fafafa;
+}
+
+.order-header{
+  display:flex;
+  justify-content:space-between;
+  gap:10px;
+  flex-wrap:wrap;
+  margin-bottom:12px;
+}
+
+.order-title{
+  font-weight:bold;
+  font-size:17px;
+}
+
+.status{
+  padding:5px 9px;
+  border-radius:6px;
+  background:#eee;
+  font-weight:bold;
+  font-size:13px;
+}
+
+.customer-info{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+  gap:8px;
+  margin-bottom:15px;
+}
+
+.info{
+  background:#fff;
+  padding:10px;
+  border-radius:7px;
+  border:1px solid #eee;
+}
+
+.info b{
+  display:block;
+  margin-bottom:3px;
+}
+
+.items-table{
+  min-width:650px;
+  margin-top:10px;
+}
+
+.total-row{
+  font-weight:bold;
+  font-size:16px;
+}
+
+.empty{
+  padding:20px;
+  text-align:center;
   color:#666;
 }
 </style>
@@ -91,6 +168,7 @@ th,td{
   <h2>Seller Summary</h2>
 
   <div class="grid">
+
     <div class="stat">
       Products
       <strong id="productCount">0</strong>
@@ -105,6 +183,7 @@ th,td{
       Sales
       <strong id="salesTotal">UGX 0</strong>
     </div>
+
   </div>
 </div>
 
@@ -148,7 +227,9 @@ th,td{
 <h2>My Products</h2>
 
 <div style="overflow-x:auto">
+
 <table>
+
 <thead>
 <tr>
 <th>Product</th>
@@ -161,6 +242,7 @@ th,td{
 <tbody id="productsTable"></tbody>
 
 </table>
+
 </div>
 
 </div>
@@ -169,21 +251,7 @@ th,td{
 
 <h2>My Orders</h2>
 
-<div style="overflow-x:auto">
-<table>
-<thead>
-<tr>
-<th>Order</th>
-<th>Customer</th>
-<th>Total</th>
-<th>Status</th>
-</tr>
-</thead>
-
-<tbody id="ordersTable"></tbody>
-
-</table>
-</div>
+<div id="ordersContainer"></div>
 
 </div>
 
@@ -206,11 +274,15 @@ function money(n){
 function getUser(){
 
   try{
+
     return JSON.parse(
       localStorage.getItem("mymarket_user") || "null"
     );
+
   }catch(e){
+
     return null;
+
   }
 
 }
@@ -219,28 +291,12 @@ async function loadSeller(){
 
   user = getUser();
 
-  const user = JSON.parse(localStorage.getItem("mymarket_user") || "null");
-
-if(!user || user.role !== "seller"){
+  if(!user || user.role !== "seller"){
 
     document.querySelector(".wrap").innerHTML = `
       <div class="card">
         <h2>Seller account required</h2>
         <p>Please login using a seller account.</p>
-        <a href="/">Back to MyMarket</a>
-      </div>
-    `;
-        }
-
-    return;
-  }
-
-  if(user.role !== "seller"){
-
-    document.querySelector(".wrap").innerHTML = `
-      <div class="card">
-        <h2>Seller account required</h2>
-        <p>The currently logged-in account is not a seller account.</p>
         <a href="/">Back to MyMarket</a>
       </div>
     `;
@@ -285,11 +341,22 @@ async function loadProducts(){
 
       table.innerHTML += `
         <tr>
-          <td>${escapeHtml(p.image || "")}
-              ${escapeHtml(p.name)}</td>
-          <td>${escapeHtml(p.category)}</td>
-          <td>${money(p.price)}</td>
-          <td>${Number(p.stock || 0)}</td>
+          <td>
+            ${escapeHtml(p.image || "")}
+            ${escapeHtml(p.name)}
+          </td>
+
+          <td>
+            ${escapeHtml(p.category)}
+          </td>
+
+          <td>
+            ${money(p.price)}
+          </td>
+
+          <td>
+            ${Number(p.stock || 0)}
+          </td>
         </tr>
       `;
 
@@ -323,27 +390,165 @@ async function loadOrders(){
 
     const sales =
       orders.reduce(
-        (sum,o) => sum + Number(o.total || 0),
+        (sum,o) =>
+          sum + Number(o.total || 0),
         0
       );
 
     document.getElementById("salesTotal")
       .textContent = money(sales);
 
-    const table =
-      document.getElementById("ordersTable");
+    const container =
+      document.getElementById("ordersContainer");
 
-    table.innerHTML = "";
+    container.innerHTML = "";
+
+    if(!orders.length){
+
+      container.innerHTML = `
+        <div class="empty">
+          No orders have been received yet.
+        </div>
+      `;
+
+      return;
+    }
 
     orders.forEach(o => {
 
-      table.innerHTML += `
-        <tr>
-          <td>${escapeHtml(o.id)}</td>
-          <td>${escapeHtml(o.customerName || "Guest")}</td>
-          <td>${money(o.total)}</td>
-          <td>${escapeHtml(o.status || "Pending")}</td>
-        </tr>
+      const items =
+        Array.isArray(o.items)
+          ? o.items
+          : [];
+
+      const orderDate =
+        o.createdAt
+          ? new Date(o.createdAt).toLocaleString()
+          : "Not available";
+
+      let itemsHtml = "";
+
+      items.forEach(item => {
+
+        itemsHtml += `
+          <tr>
+
+            <td>
+              ${escapeHtml(item.image || "")}
+              ${escapeHtml(item.name || "Product")}
+            </td>
+
+            <td>
+              ${Number(item.qty || 0)}
+            </td>
+
+            <td>
+              ${money(item.price)}
+            </td>
+
+            <td>
+              ${money(
+                Number(item.price || 0) *
+                Number(item.qty || 0)
+              )}
+            </td>
+
+          </tr>
+        `;
+
+      });
+
+      container.innerHTML += `
+
+        <div class="order-box">
+
+          <div class="order-header">
+
+            <div>
+              <div class="order-title">
+                Order #${escapeHtml(o.id)}
+              </div>
+
+              <div class="small">
+                ${escapeHtml(orderDate)}
+              </div>
+            </div>
+
+            <div class="status">
+              ${escapeHtml(o.status || "Pending")}
+            </div>
+
+          </div>
+
+
+          <h3>Buyer Details</h3>
+
+          <div class="customer-info">
+
+            <div class="info">
+              <b>Name</b>
+              ${escapeHtml(o.customerName || "Guest")}
+            </div>
+
+            <div class="info">
+              <b>Phone</b>
+              ${escapeHtml(o.phone || "Not provided")}
+            </div>
+
+            <div class="info">
+              <b>Delivery Address</b>
+              ${escapeHtml(o.address || "Not provided")}
+            </div>
+
+            <div class="info">
+              <b>Payment</b>
+              ${escapeHtml(o.payment || "Cash on Delivery")}
+            </div>
+
+          </div>
+
+
+          <h3>Products Ordered</h3>
+
+          <div style="overflow-x:auto">
+
+            <table class="items-table">
+
+              <thead>
+
+                <tr>
+                  <th>Product</th>
+                  <th>Quantity</th>
+                  <th>Unit Price</th>
+                  <th>Subtotal</th>
+                </tr>
+
+              </thead>
+
+              <tbody>
+
+                ${itemsHtml}
+
+                <tr class="total-row">
+
+                  <td colspan="3">
+                    ORDER TOTAL
+                  </td>
+
+                  <td>
+                    ${money(o.total)}
+                  </td>
+
+                </tr>
+
+              </tbody>
+
+            </table>
+
+          </div>
+
+        </div>
+
       `;
 
     });
@@ -352,6 +557,12 @@ async function loadOrders(){
 
     console.error(error);
 
+    document.getElementById("ordersContainer").innerHTML = `
+      <div class="empty">
+        Unable to load orders.
+      </div>
+    `;
+
   }
 
 }
@@ -359,19 +570,28 @@ async function loadOrders(){
 async function addProduct(){
 
   const name =
-    document.getElementById("productName").value.trim();
+    document.getElementById("productName")
+      .value.trim();
 
   const category =
-    document.getElementById("productCategory").value;
+    document.getElementById("productCategory")
+      .value;
 
   const price =
-    Number(document.getElementById("productPrice").value);
+    Number(
+      document.getElementById("productPrice")
+        .value
+    );
 
   const stock =
-    Number(document.getElementById("productStock").value);
+    Number(
+      document.getElementById("productStock")
+        .value
+    );
 
   const image =
-    document.getElementById("productImage").value.trim();
+    document.getElementById("productImage")
+      .value.trim();
 
   const message =
     document.getElementById("message");
@@ -388,18 +608,26 @@ async function addProduct(){
 
     const response =
       await fetch("/api/products",{
+
         method:"POST",
+
         headers:{
           "Content-Type":"application/json"
         },
+
         body:JSON.stringify({
+
           name,
           category,
           price,
           stock,
+
           sellerId:user.id,
+
           image:image || "🛍️"
+
         })
+
       });
 
     const data =
@@ -408,7 +636,9 @@ async function addProduct(){
     if(!response.ok){
 
       message.textContent =
-        "❌ " + (data.error || "Unable to add product");
+        "❌ " +
+        (data.error ||
+        "Unable to add product");
 
       return;
     }
@@ -416,10 +646,17 @@ async function addProduct(){
     message.textContent =
       "✅ Product added successfully.";
 
-    document.getElementById("productName").value="";
-    document.getElementById("productPrice").value="";
-    document.getElementById("productStock").value="";
-    document.getElementById("productImage").value="";
+    document.getElementById("productName")
+      .value="";
+
+    document.getElementById("productPrice")
+      .value="";
+
+    document.getElementById("productStock")
+      .value="";
+
+    document.getElementById("productImage")
+      .value="";
 
     await loadProducts();
 
@@ -437,6 +674,7 @@ async function addProduct(){
 function escapeHtml(value){
 
   return String(value)
+
     .replace(/&/g,"&amp;")
     .replace(/</g,"&lt;")
     .replace(/>/g,"&gt;")
