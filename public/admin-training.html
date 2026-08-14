@@ -1,592 +1,159 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>MyMarket - Training Admin</title>
-  <link rel="stylesheet" href="/styles.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <style>
-    .admin-wrap {
-      max-width: 800px;
-      margin: 25px auto;
-      padding: 20px;
-    }
+<title>MyMarket - Training Admin</title>
 
-    .admin-card {
-      background: #fff;
-      padding: 20px;
-      margin-bottom: 18px;
-      border-radius: 12px;
-      box-shadow: 0 2px 10px rgba(0,0,0,.08);
-    }
+<link rel="stylesheet" href="/styles.css">
 
-    .warning {
-      background: #fff3cd;
-      border: 1px solid #ffc107;
-      padding: 15px;
-      border-radius: 10px;
-      margin-bottom: 20px;
-    }
+<style>
+.admin-wrap{
+  max-width:800px;
+  margin:25px auto;
+  padding:20px;
+}
 
-    label {
-      display: block;
-      margin-top: 12px;
-      font-weight: bold;
-    }
+.admin-card{
+  background:#fff;
+  padding:20px;
+  margin-bottom:18px;
+  border-radius:12px;
+  box-shadow:0 2px 10px rgba(0,0,0,.08);
+}
 
-    input {
-      width: 100%;
-      box-sizing: border-box;
-      padding: 11px;
-      margin-top: 5px;
-      border: 1px solid #ccc;
-      border-radius: 7px;
-    }
+.warning{
+  background:#fff3cd;
+  border:1px solid #ffc107;
+  padding:15px;
+  border-radius:10px;
+  margin-bottom:20px;
+}
 
-    .save-btn {
-      margin-top: 20px;
-      width: 100%;
-      padding: 13px;
-      background: #198754;
-      color: white;
-      border: none;
-      border-radius: 8px;
-      font-weight: bold;
-      cursor: pointer;
-    }
+label{
+  display:block;
+  margin-top:12px;
+  font-weight:bold;
+}
 
-    .product-row {
-      margin-bottom: 10px;
-    }
+input{
+  width:100%;
+  box-sizing:border-box;
+  padding:11px;
+  margin-top:5px;
+  border:1px solid #ccc;
+  border-radius:7px;
+}
 
-    #message {
-      margin-top: 15px;
-      font-weight: bold;
-    }
-  </style>
+button{
+  cursor:pointer;
+  border:none;
+  border-radius:8px;
+  padding:12px;
+  font-weight:bold;
+}
+
+.save-btn{
+  margin-top:20px;
+  width:100%;
+  background:#198754;
+  color:white;
+}
+
+.load-btn{
+  width:100%;
+  background:#0d6efd;
+  color:white;
+}
+
+.clear-btn{
+  width:100%;
+  background:#198754;
+  color:white;
+  margin-top:10px;
+}
+
+.product-row{
+  margin-bottom:10px;
+}
+
+#message{
+  margin-top:15px;
+  font-weight:bold;
+}
+
+#trainees{
+  margin-top:15px;
+}
+</style>
+
 </head>
 
 <body>
 
 <div class="admin-wrap">
 
-  <h1>40/40 Training Admin</h1>
+<h1>40/40 Training Admin</h1>
 
-  <div class="warning">
-    ⚠️ <strong>TRAINING SIMULATION</strong><br>
-    These settings control demo values only.
-    This page does not process real deposits or withdrawals.
-  </div>
+<div class="warning">
+⚠️ <strong>TRAINING SIMULATION</strong><br>
+These settings control demo values only.
+This page does not process real deposits or withdrawals.
+</div>
 
-  <div class="admin-card">
+<div class="admin-card">
 
-    <h2>Training Settings</h2>
+<h2>Training Settings</h2>
 
-    <label>Starting Demo Balance</label>
-    <input id="startingBalance" type="number">
+<label>Starting Demo Balance</label>
+<input id="startingBalance" type="number">
 
-    <label>Negative Task Number</label>
-    <input id="negativeTask" type="number" min="1" max="40">
+<label>Negative Task Number</label>
+<input id="negativeTask" type="number">
 
-    <label>Negative Demo Balance</label>
-    <input id="negativeBalance" type="number">
+<label>Negative Demo Balance</label>
+<input id="negativeBalance" type="number">
 
-    <label>Simulated Deposit</label>
-    <input id="demoDeposit" type="number">
+<label>Simulated Deposit</label>
+<input id="demoDeposit" type="number">
 
-    <label>Commission Per Task</label>
-    <input id="commissionPerTask" type="number">
+<label>Commission Per Task</label>
+<input id="commissionPerTask" type="number">
 
-  </div>
+</div>
 
-  <div class="admin-card">
+<div class="admin-card">
 
-    <h2>40 Training Products</h2>
+<h2>40 Training Products</h2>
 
-    <div id="products"></div>
+<div id="products"></div>
 
-  </div>
+</div>
 
-  <button class="save-btn" onclick="saveSettings()">
-    SAVE TRAINING SETTINGS
-  </button>
+<button class="save-btn" onclick="saveSettings()">
+SAVE TRAINING SETTINGS
+</button>
+
 <a href="/training.html"
-   style="display:block;text-align:center;margin-top:15px;font-weight:bold;">
-  🎓 OPEN TRAINEE TRAINING
-</a><div class="admin-card">
+style="display:block;text-align:center;margin-top:15px;font-weight:bold;">
+🎓 OPEN TRAINEE TRAINING
+</a>
 
-  <h2>👤 Trainee Clearance</h2>
+<div class="admin-card">
 
-  <p>
-    Trainees who reach a negative demo balance will appear here.
-  </p>
+<h2>👤 Trainee Clearance</h2>
 
-  <button
-    class="save-btn"
-    onclick="loadTrainees()">
-    LOAD TRAINEES
-  </button>
+<p>
+Trainees who reach a negative demo balance will appear here.
+</p>
+
+<button class="load-btn" onclick="loadTrainees()">
+LOAD TRAINEES
+</button>
+
 <div id="trainees"></div>
-  <div id="trainees"></div>
-
-</div>
-  <div id="message"></div>
 
 </div>
 
-<script>
-
-async function loadSettings() {
-
-  try {
-
-    const response =
-      await fetch("/api/training/settings");
-
-    const data = await response.json();
-
-    const t = data.training;
-
-    document.getElementById("startingBalance").value =
-      t.startingBalance;
-
-    document.getElementById("negativeTask").value =
-      t.negativeTask;
-
-    document.getElementById("negativeBalance").value =
-      t.negativeBalance;
-
-    document.getElementById("demoDeposit").value =
-      t.demoDeposit;
-
-    document.getElementById("commissionPerTask").value =
-      t.commissionPerTask;
-
-    const container =
-      document.getElementById("products");
-
-    container.innerHTML = "";
-
-    t.products.forEach((product, index) => {
-
-      const row = document.createElement("div");
-
-      row.className = "product-row";
-
-      row.innerHTML = `
-        <label>Product ${index + 1}</label>
-        <input
-          class="product-input"
-          value="${escapeHtml(product)}"
-        >
-      `;
-
-      container.appendChild(row);
-
-    });
-
-  } catch (error) {
-
-    document.getElementById("message").textContent =
-      "Unable to load training settings.";
-
-  }
-
-}
-
-function escapeHtml(value) {
-
-  return String(value)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
-
-}
-
-async function saveSettings() {
-
-  const products =
-    Array.from(
-      document.querySelectorAll(".product-input")
-    ).map(input => input.value.trim());
-
-  if (products.length !== 40) {
-
-    document.getElementById("message").textContent =
-      "You must have exactly 40 products.";
-
-    return;
-
-  }
-
-  const settings = {
-
-    startingBalance:
-      Number(document.getElementById("startingBalance").value),
-
-    negativeTask:
-      Number(document.getElementById("negativeTask").value),
-
-    negativeBalance:
-      Number(document.getElementById("negativeBalance").value),
-
-    demoDeposit:
-      Number(document.getElementById("demoDeposit").value),
-
-    commissionPerTask:
-      Number(document.getElementById("commissionPerTask").value),
-
-    products
-
-  };
-
-  try {
-
-    const response = await fetch(
-      "/api/training/settings",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify(settings)
-      }
-    );
-
-    const data = await response.json();
-
-    if (!response.ok) {
-
-      throw new Error(
-        data.error || "Save failed"
-      );
-
-    }
-
-    document.getElementById("message").textContent =
-      "✅ Training settings saved successfully.";
-
-  } catch (error) {
-
-    document.getElementById("message").textContent =
-      "❌ " + error.message;
-
-  }
-
-}
-
-async function loadTrainees() {
-
-  try {
-
-    const response =
-      await fetch("/api/training/admin-trainees");
-
-    const data =
-      await response.json();
-
-    if (!response.ok) {
-      alert(data.error || "Unable to load trainees.");
-      return;
-    }
-
-    const container =
-      document.getElementById("trainees");
-
-    container.innerHTML = "";
-
-    if (!data.trainees || data.trainees.length === 0) {
-
-      container.innerHTML =
-        "<p>No trainees currently require clearance.</p>";
-
-      return;
-    }
-
-    data.trainees.forEach(t => {
-
-      const card =
-        document.createElement("div");
-
-      card.className = "admin-card";
-
-      card.innerHTML = `
-        <h3>Trainee</h3>
-
-        <p>
-          <strong>User ID:</strong>
-          ${escapeHtml(t.userId)}
-        </p>
-
-        <p>
-          <strong>Progress:</strong>
-          ${t.progress}/40
-        </p>
-
-        <p>
-          <strong>Demo Balance:</strong>
-          UGX ${Number(t.balance || 0).toLocaleString()}
-        </p>
-
-        <p>
-          <strong>Negative Amount:</strong>
-          UGX ${Number(t.negativeAmount || 0).toLocaleString()}
-        </p>
-
-        <p>
-          <strong>Status:</strong>
-          ${escapeHtml(t.status || "active")}
-        </p>
-
-        ${
-          t.status === "waiting_admin"
-          ? `
-            <label>
-              Demo balance after admin clearance
-            </label>
-
-            <input
-              id="clearBalance-${escapeHtml(t.userId)}"
-              type="number"
-              value="50000"
-              min="1"
-            >
-
-            <button
-              class="save-btn"
-              onclick="clearTrainee('${escapeHtml(t.userId)}')">
-              CLEAR NEGATIVE & CONTINUE
-            </button>
-          `
-          : ""
-        }
-      `;
-
-      container.appendChild(card);
-
-    });
-
-  } catch(error) {
-
-    console.error(error);
-
-    alert(
-      "Unable to connect to the training server."
-    );
-
-  }
-}
-
-
-async function clearTrainee(userId) {
-
-  const input =
-    document.getElementById(
-      "clearBalance-" + userId
-    );
-
-  const demoBalance =
-    Number(input.value);
-
-  if (!demoBalance || demoBalance <= 0) {
-
-    alert(
-      "Enter a valid demo balance."
-    );
-
-    return;
-  }
-
-  try {
-
-    const response =
-      await fetch(
-        "/api/training/admin-clear",
-        {
-          method: "POST",
-
-          headers: {
-            "Content-Type":
-              "application/json"
-          },
-
-          body: JSON.stringify({
-            userId: userId,
-            demoBalance: demoBalance
-          })
-        }
-      );
-
-    const data =
-      await response.json();
-
-    if (!response.ok) {
-
-      alert(
-        data.error ||
-        "Unable to clear trainee."
-      );
-
-      return;
-    }
-
-    alert(
-      "✅ Negative demo requirement cleared. Trainee can continue to 40/40."
-    );
-
-    loadTrainees();
-
-  } catch(error) {
-
-    console.error(error);
-
-    alert(
-      "Unable to connect to the server."
-    );
-  }
-}
-
-
-loadSettings();
-
-</body>
-  </html>
-async function loadTrainees() {
-  const container = document.getElementById("trainees");
-
-  container.innerHTML = "Loading trainees...";
-
-  try {
-    const user = JSON.parse(
-      localStorage.getItem("mymarket_user") || "null"
-    );
-
-    if (!user || user.role !== "admin") {
-      container.innerHTML =
-        "<p>Administrator login required.</p>";
-      return;
-    }
-
-    const response = await fetch(
-      "/api/training/admin-trainees?adminEmail=" +
-      encodeURIComponent(user.email)
-    );
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      container.innerHTML =
-        "<p>❌ " + (data.error || "Unable to load trainees.") + "</p>";
-      return;
-    }
-
-    if (!data.trainees || data.trainees.length === 0) {
-      container.innerHTML =
-        "<p>No trainee records found yet.</p>";
-      return;
-    }
-
-    container.innerHTML = data.trainees.map(t => `
-      <div class="admin-card">
-        <h3>👤 Trainee</h3>
-
-        <p>
-          <strong>Progress:</strong>
-          ${t.progress}/40
-        </p>
-
-        <p>
-          <strong>Demo Balance:</strong>
-          UGX ${Number(t.balance || 0).toLocaleString()}
-        </p>
-
-        <p>
-          <strong>Negative Amount:</strong>
-          UGX ${Number(t.negativeAmount || 0).toLocaleString()}
-        </p>
-
-        <p>
-          <strong>Deposit Required:</strong>
-          UGX ${Number(t.depositRequired || 0).toLocaleString()}
-        </p>
-
-        <p>
-          <strong>Status:</strong>
-          ${t.status}
-        </p>
-
-        ${
-          t.status === "waiting_admin"
-          ? `
-            <button
-              onclick="clearTrainee('${t.userId}')"
-              style="
-                width:100%;
-                padding:12px;
-                background:#198754;
-                color:white;
-                border:none;
-                border-radius:8px;
-                font-weight:bold;
-              ">
-              CLEAR DEMO REQUIREMENT
-            </button>
-          `
-          : ""
-        }
-      </div>
-    `).join("");
-
-  } catch (error) {
-    console.error(error);
-
-    container.innerHTML =
-      "<p>❌ Unable to connect to the training server.</p>";
-  }
-  }async function clearTrainee(userId) {
-
-  const demoBalance =
-    prompt(
-      "Enter the DEMO balance to give the trainee after clearance:",
-      "50000"
-    );
-
-  if (demoBalance === null) return;
-
-  try {
-
-    const response = await fetch(
-      "/api/training/admin-clear",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          userId: userId,
-          demoBalance: Number(demoBalance)
-        })
-      }
-    );
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      alert(data.error || "Clearance failed.");
-      return;
-    }
-
-    alert("✅ Demo requirement cleared.");
-
-    loadTrainees();
-
-  } catch (error) {
-
-    console.error(error);
-
-    alert("Unable to connect to the training server.");
-  }
-  }
+<div id="message"></div>
