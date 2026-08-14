@@ -235,6 +235,30 @@ async function checkout(e){e.preventDefault();try{let j=await api("/api/orders",
 
   }
 
+  }async function updateSellerOrderStatus(orderId,status){
+
+  try{
+
+    await api("/api/orders/"+orderId,{
+      method:"PUT",
+      headers:{
+        "Content-Type":"application/json"
+      },
+      body:JSON.stringify({
+        status
+      })
+    });
+
+    alert("✅ Order status updated.");
+
+    await renderSeller();
+
+  }catch(err){
+
+    alert("❌ "+err.message);
+
+  }
+
   }
 async function addProduct(e){e.preventDefault();try{await api("/api/products",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({name:pn.value,price:pp.value,stock:ps.value,category:pc.value,sellerId:user.id,image:"🛍️"})});renderSeller();loadProducts()}catch(err){alert(err.message)}}
 async function renderAdmin(){let el=document.getElementById("adminPanel");if(!user||user.role!=="admin"){el.innerHTML=`<div class="notice">Please login as the administrator.</div>`;return}let s=await api("/api/admin/stats"),o=await api("/api/orders");el.innerHTML=`<div class="stats"><div class="stat">Customers<b>${s.customers}</b></div><div class="stat">Sellers<b>${s.sellers}</b></div><div class="stat">Products<b>${s.products}</b></div><div class="stat">Orders<b>${s.orders}</b></div><div class="stat">Revenue<b>${money(s.revenue)}</b></div></div><h3>Recent orders</h3><table class="table"><tr><th>Order</th><th>Customer</th><th>Total</th><th>Status</th><th>Action</th></tr>${o.orders.map(x=>`<tr><td>${x.id}</td><td>${x.customerName}</td><td>${money(x.total)}</td><td>${x.status}</td><td><select onchange="setStatus('${x.id}',this.value)"><option>Pending</option><option>Confirmed</option><option>Processing</option><option>Out for delivery</option><option>Delivered</option><option>Cancelled</option></select></td></tr>`).join("")}</table>`}
