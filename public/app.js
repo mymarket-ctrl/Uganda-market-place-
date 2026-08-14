@@ -22,4 +22,85 @@ async function renderSeller(){let el=document.getElementById("sellerPanel");if(!
 async function addProduct(e){e.preventDefault();try{await api("/api/products",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({name:pn.value,price:pp.value,stock:ps.value,category:pc.value,sellerId:user.id,image:"🛍️"})});renderSeller();loadProducts()}catch(err){alert(err.message)}}
 async function renderAdmin(){let el=document.getElementById("adminPanel");if(!user||user.role!=="admin"){el.innerHTML=`<div class="notice">Please login as the administrator.</div>`;return}let s=await api("/api/admin/stats"),o=await api("/api/orders");el.innerHTML=`<div class="stats"><div class="stat">Customers<b>${s.customers}</b></div><div class="stat">Sellers<b>${s.sellers}</b></div><div class="stat">Products<b>${s.products}</b></div><div class="stat">Orders<b>${s.orders}</b></div><div class="stat">Revenue<b>${money(s.revenue)}</b></div></div><h3>Recent orders</h3><table class="table"><tr><th>Order</th><th>Customer</th><th>Total</th><th>Status</th><th>Action</th></tr>${o.orders.map(x=>`<tr><td>${x.id}</td><td>${x.customerName}</td><td>${money(x.total)}</td><td>${x.status}</td><td><select onchange="setStatus('${x.id}',this.value)"><option>Pending</option><option>Confirmed</option><option>Processing</option><option>Out for delivery</option><option>Delivered</option><option>Cancelled</option></select></td></tr>`).join("")}</table>`}
 async function setStatus(id,status){await api("/api/orders/"+id,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({status})});renderAdmin()}
-loadCategories();loadProducts();saveCart();
+async function openMyOrders(){
+
+  if(!user){
+    openLogin();
+    return;
+  }
+
+  try{
+
+    const j = await api(
+      "/api/orders?role=customer&userId=" +
+      encodeURIComponent(user.id)
+    );
+
+    const orders = j.orders || [];
+
+    document.getElementById("modal").innerHTML = `
+      <div class="modalbox">
+        <h2>📦 My Orders</h2>
+
+        ${
+          orders.length
+          ? orders.map(o => `
+            <div style="border:1px solid #ddd;padding:15px;border-radius:10px;margin:12px 0">
+
+              <h3>Order ${o.id}</h3>
+
+              <p>
+                <b>Status:</b>
+                ${o.status || "Pending"}
+              </p>
+
+              <p>
+                <b>Phone:</b>
+                ${o.phone || "Not provided"}
+              </p>
+
+              <p>
+                <b>Delivery:</b>
+                ${o.address || "Not provided"}
+              </p>
+
+              <h4>Products</h4>
+
+              ${
+                (o.items || []).map(item => `
+                  <div style="padding:8px 0;border-bottom:1px solid #eee">
+                    ${item.image || "🛍️"}
+                    <b>${item.name}</b>
+                    × ${item.qty}
+                    — ${money(Number(item.price) * Number(item.qty))}
+                  </div>
+                `).join("")
+              }
+
+              <h3>
+                Total: ${money(o.total)}
+              </h3>
+
+              <p>
+                <b>Payment:</b>
+                ${o.payment || "Cash on Delivery"}
+              </p>
+
+            </div>
+          `).join("")
+          : `<p>You have no orders yet.</p>`
+        }
+
+        <button onclick="closeModal()">Close</button>
+      </div>
+    `;
+
+    document.getElementById("modal")
+      .classList.remove("hidden");
+
+  }catch(err){
+
+    alert(err.message);
+
+  }
+}loadCategories();loadProducts();saveCart();
