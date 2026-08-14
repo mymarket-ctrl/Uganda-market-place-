@@ -677,11 +677,11 @@ async function api(req, res, url) {
           )
         ];
 
-      t.balance -= negative;
-      t.negativeAm count = negative;
-      t.depositRequired = negative;
-      t.depositApproved = false;
-      t.status = "waiting_admin";
+    t.balance -= negative;
+t.negativeAmount = negative;
+t.depositRequired = negative;
+t.depositApproved = false;
+t.status = "waiting_admin";
     }
 
     // Complete at 40/40.
