@@ -18,7 +18,224 @@ function openCart(){let total=cart.reduce((s,i)=>s+i.price*i.qty,0);document.get
 function removeCart(id){cart=cart.filter(i=>i.id!==id);saveCart();openCart()}
 function checkoutForm(){document.getElementById("modal").innerHTML=`<div class="modalbox"><h2>Checkout</h2><form onsubmit="checkout(event)"><div class="field"><label>Full name</label><input id="cname" value="${user?.name||""}" required></div><div class="field"><label>Phone number</label><input id="cphone" placeholder="07..." required></div><div class="field"><label>Delivery address</label><textarea id="caddress" placeholder="Town, area, landmark" required></textarea></div><div class="field"><label>Payment</label><select id="payment"><option>Cash on Delivery</option><option>Mobile Money - Coming soon</option></select></div><button class="primary">Place Order</button></form></div>`}
 async function checkout(e){e.preventDefault();try{let j=await api("/api/orders",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({customerId:user?.id||"guest",customerName:cname.value,phone:cphone.value,address:caddress.value,payment:payment.value,items:cart})});cart=[];saveCart();document.getElementById("modal").innerHTML=`<div class="modalbox"><h2>✅ Order placed</h2><p>Order <b>${j.order.id}</b> has been received.</p><p>We will contact you on ${j.order.phone}.</p><button onclick="closeModal()">Done</button></div>`}catch(err){alert(err.message)}}
-async function renderSeller(){let el=document.getElementById("sellerPanel");if(!user||user.role!=="seller"){el.innerHTML=`<div class="notice">Please login with a seller account to access Seller Office.</div>`;return}let j=await api("/api/products");let mine=j.products.filter(p=>p.sellerId===user.id);let o=await api("/api/orders?role=seller&userId="+user.id);el.innerHTML=`<div class="stats"><div class="stat">Products<b>${mine.length}</b></div><div class="stat">Orders<b>${o.orders.length}</b></div><div class="stat">Sales<b>${money(o.orders.reduce((s,x)=>s+x.total,0))}</b></div></div><h3>Add product</h3><form onsubmit="addProduct(event)" class="row"><input id="pn" placeholder="Product name" required><input id="pp" type="number" placeholder="Price UGX" required><input id="ps" type="number" placeholder="Stock" required><select id="pc"><option>Phones</option><option>Electronics</option><option>Solar</option><option>Fashion</option><option>Home</option><option>Beauty</option><option>Groceries</option></select><button class="primary">Add</button></form><h3>My products</h3><table class="table"><tr><th>Product</th><th>Price</th><th>Stock</th></tr>${mine.map(p=>`<tr><td>${p.name}</td><td>${money(p.price)}</td><td>${p.stock}</td></tr>`).join("")}</table>`}
+  async function renderSeller(){
+
+  let el=document.getElementById("sellerPanel");
+
+  if(!user || user.role!=="seller"){
+    el.innerHTML=`
+      <div class="notice">
+        Please login with a seller account to access Seller Office.
+      </div>`;
+    return;
+  }
+
+  try{
+
+    let j=await api("/api/products");
+
+    let mine=j.products.filter(
+      p=>p.sellerId===user.id
+    );
+
+    let o=await api(
+      "/api/orders?role=seller&userId="+
+      encodeURIComponent(user.id)
+    );
+
+    let orders=o.orders||[];
+
+    el.innerHTML=`
+
+      <div class="stats">
+
+        <div class="stat">
+          Products
+          <b>${mine.length}</b>
+        </div>
+
+        <div class="stat">
+          Orders
+          <b>${orders.length}</b>
+        </div>
+
+        <div class="stat">
+          Sales
+          <b>${money(
+            orders.reduce(
+              (s,x)=>s+Number(x.total||0),0
+            )
+          )}</b>
+        </div>
+
+      </div>
+
+      <h3>Add product</h3>
+
+      <form onsubmit="addProduct(event)" class="row">
+
+        <input id="pn"
+          placeholder="Product name"
+          required>
+
+        <input id="pp"
+          type="number"
+          placeholder="Price UGX"
+          required>
+
+        <input id="ps"
+          type="number"
+          placeholder="Stock"
+          required>
+
+        <select id="pc">
+          <option>Phones</option>
+          <option>Electronics</option>
+          <option>Solar</option>
+          <option>Fashion</option>
+          <option>Home</option>
+          <option>Beauty</option>
+          <option>Groceries</option>
+        </select>
+
+        <button class="primary">
+          Add
+        </button>
+
+      </form>
+
+      <h3>My products</h3>
+
+      <div style="overflow-x:auto">
+
+        <table class="table">
+
+          <tr>
+            <th>Product</th>
+            <th>Price</th>
+            <th>Stock</th>
+          </tr>
+
+          ${mine.map(p=>`
+            <tr>
+              <td>${p.image||"🛍️"} ${p.name}</td>
+              <td>${money(p.price)}</td>
+              <td>${p.stock}</td>
+            </tr>
+          `).join("")}
+
+        </table>
+
+      </div>
+
+      <h3>📦 Customer Orders</h3>
+
+      ${
+        orders.length
+        ? orders.map(order=>`
+
+          <div style="
+            border:1px solid #ddd;
+            border-radius:10px;
+            padding:15px;
+            margin:15px 0;
+            background:#fff;
+          ">
+
+            <h4>
+              Order ${order.id}
+            </h4>
+
+            <p>
+              <b>Buyer:</b>
+              ${order.customerName||"Guest"}
+            </p>
+
+            <p>
+              <b>Phone:</b>
+              ${order.phone||"Not provided"}
+            </p>
+
+            <p>
+              <b>Delivery address:</b>
+              ${order.address||"Not provided"}
+            </p>
+
+            <p>
+              <b>Payment:</b>
+              ${order.payment||"Cash on Delivery"}
+            </p>
+
+            <p>
+              <b>Status:</b>
+              ${order.status||"Pending"}
+            </p>
+
+            <h4>Products purchased</h4>
+
+            ${
+              (order.items||[]).map(item=>`
+
+                <div style="
+                  padding:8px 0;
+                  border-bottom:1px solid #eee;
+                ">
+
+                  ${item.image||"🛍️"}
+
+                  <b>${item.name}</b>
+
+                  × ${item.qty}
+
+                  — ${money(
+                    Number(item.price||0) *
+                    Number(item.qty||0)
+                  )}
+
+                </div>
+
+              `).join("")
+            }
+
+            <h4>
+              Order Total:
+              ${money(order.total)}
+            </h4>
+
+            <p style="color:#687386">
+              Ordered:
+              ${
+                order.createdAt
+                ? new Date(order.createdAt).toLocaleString()
+                : "Not available"
+              }
+            </p>
+
+          </div>
+
+        `).join("")
+        : `
+          <div class="notice">
+            No customer orders yet.
+          </div>
+        `
+      }
+
+    `;
+
+  }catch(err){
+
+    console.error(err);
+
+    el.innerHTML=`
+      <div class="notice">
+        Unable to load Seller Office data.
+      </div>
+    `;
+
+  }
+
+  }
 async function addProduct(e){e.preventDefault();try{await api("/api/products",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({name:pn.value,price:pp.value,stock:ps.value,category:pc.value,sellerId:user.id,image:"🛍️"})});renderSeller();loadProducts()}catch(err){alert(err.message)}}
 async function renderAdmin(){let el=document.getElementById("adminPanel");if(!user||user.role!=="admin"){el.innerHTML=`<div class="notice">Please login as the administrator.</div>`;return}let s=await api("/api/admin/stats"),o=await api("/api/orders");el.innerHTML=`<div class="stats"><div class="stat">Customers<b>${s.customers}</b></div><div class="stat">Sellers<b>${s.sellers}</b></div><div class="stat">Products<b>${s.products}</b></div><div class="stat">Orders<b>${s.orders}</b></div><div class="stat">Revenue<b>${money(s.revenue)}</b></div></div><h3>Recent orders</h3><table class="table"><tr><th>Order</th><th>Customer</th><th>Total</th><th>Status</th><th>Action</th></tr>${o.orders.map(x=>`<tr><td>${x.id}</td><td>${x.customerName}</td><td>${money(x.total)}</td><td>${x.status}</td><td><select onchange="setStatus('${x.id}',this.value)"><option>Pending</option><option>Confirmed</option><option>Processing</option><option>Out for delivery</option><option>Delivered</option><option>Cancelled</option></select></td></tr>`).join("")}</table>`}
 async function setStatus(id,status){await api("/api/orders/"+id,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({status})});renderAdmin()}
