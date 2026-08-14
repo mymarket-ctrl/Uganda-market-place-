@@ -157,3 +157,464 @@ LOAD TRAINEES
 </div>
 
 <div id="message"></div>
+<script>
+
+function getAdmin(){
+
+  try{
+
+    return JSON.parse(
+      localStorage.getItem("mymarket_user") || "null"
+    );
+
+  }catch(error){
+
+    return null;
+
+  }
+
+}
+
+
+async function loadSettings(){
+
+  try{
+
+    const response =
+      await fetch("/api/training/settings");
+
+    const data =
+      await response.json();
+
+    if(!response.ok){
+
+      document.getElementById("message").textContent =
+        data.error || "Unable to load settings.";
+
+      return;
+    }
+
+    const t = data.training;
+
+    document.getElementById("startingBalance").value =
+      t.startingBalance || 0;
+
+    document.getElementById("negativeTask").value =
+      t.negativeTask || 39;
+
+    document.getElementById("negativeBalance").value =
+      t.negativeBalance || 0;
+
+    document.getElementById("demoDeposit").value =
+      t.demoDeposit || 0;
+
+    document.getElementById("commissionPerTask").value =
+      t.commissionPerTask || 2500;
+
+
+    const container =
+      document.getElementById("products");
+
+    container.innerHTML = "";
+
+
+    (t.products || []).forEach(
+      function(product,index){
+
+        const row =
+          document.createElement("div");
+
+        row.className =
+          "product-row";
+
+        row.innerHTML =
+
+          "<label>Product " +
+          (index + 1) +
+          "</label>" +
+
+          "<input class='product-input' " +
+          "value='" +
+          String(product)
+            .replace(/'/g,"&#039;") +
+          "'>";
+
+        container.appendChild(row);
+
+      }
+    );
+
+  }catch(error){
+
+    console.error(error);
+
+    document.getElementById("message").textContent =
+      "Unable to load training settings.";
+
+  }
+
+}
+
+
+async function saveSettings(){
+
+  const productInputs =
+    Array.from(
+      document.querySelectorAll(".product-input")
+    );
+
+
+  const products =
+    productInputs.map(
+      function(input){
+        return input.value.trim();
+      }
+    );
+
+
+  if(products.length !== 40){
+
+    document.getElementById("message").textContent =
+      "You must have exactly 40 products.";
+
+    return;
+
+  }
+
+
+  const settings = {
+
+    startingBalance:
+      Number(
+        document.getElementById(
+          "startingBalance"
+        ).value
+      ),
+
+    negativeTask:
+      Number(
+        document.getElementById(
+          "negativeTask"
+        ).value
+      ),
+
+    negativeBalance:
+      Number(
+        document.getElementById(
+          "negativeBalance"
+        ).value
+      ),
+
+    demoDeposit:
+      Number(
+        document.getElementById(
+          "demoDeposit"
+        ).value
+      ),
+
+    commissionPerTask:
+      Number(
+        document.getElementById(
+          "commissionPerTask"
+        ).value
+      ),
+
+    products: products
+
+  };
+
+
+  try{
+
+    const response =
+      await fetch(
+        "/api/training/settings",
+        {
+          method:"POST",
+
+          headers:{
+            "Content-Type":
+              "application/json"
+          },
+
+          body:
+            JSON.stringify(settings)
+        }
+      );
+
+
+    const data =
+      await response.json();
+
+
+    if(!response.ok){
+
+      document.getElementById("message").textContent =
+        "❌ " +
+        (data.error || "Save failed.");
+
+      return;
+
+    }
+
+
+    document.getElementById("message").textContent =
+      "✅ Training settings saved successfully.";
+
+  }catch(error){
+
+    console.error(error);
+
+    document.getElementById("message").textContent =
+      "❌ Unable to save settings.";
+
+  }
+
+}async function loadTrainees(){
+
+  const container =
+    document.getElementById("trainees");
+
+  container.innerHTML =
+    "<p>Loading trainees...</p>";
+
+  const admin =
+    getAdmin();
+
+  if(!admin || admin.role !== "admin"){
+
+    container.innerHTML =
+      "<p>❌ Please log in as administrator first.</p>";
+
+    return;
+
+  }
+
+
+  try{
+
+    const response =
+      await fetch(
+        "/api/training/admin-trainees?adminEmail=" +
+        encodeURIComponent(admin.email)
+      );
+
+
+    const data =
+      await response.json();
+
+
+    if(!response.ok){
+
+      container.innerHTML =
+        "<p>❌ " +
+        (data.error || "Unable to load trainees.") +
+        "</p>";
+
+      return;
+
+    }
+
+
+    if(
+      !data.trainees ||
+      data.trainees.length === 0
+    ){
+
+      container.innerHTML =
+        "<p>No trainee records found.</p>";
+
+      return;
+
+    }
+
+
+    container.innerHTML = "";
+
+
+    data.trainees.forEach(
+      function(t){
+
+        const card =
+          document.createElement("div");
+
+        card.className =
+          "admin-card";
+
+
+        card.innerHTML =
+
+          "<h3>👤 Trainee</h3>" +
+
+          "<p><strong>User ID:</strong> " +
+          t.userId +
+          "</p>" +
+
+          "<p><strong>Progress:</strong> " +
+          Number(t.progress || 0) +
+          "/40</p>" +
+
+          "<p><strong>Demo Balance:</strong> UGX " +
+          Number(t.balance || 0)
+            .toLocaleString() +
+          "</p>" +
+
+          "<p><strong>Negative Amount:</strong> UGX " +
+          Number(t.negativeAmount || 0)
+            .toLocaleString() +
+          "</p>" +
+
+          "<p><strong>Deposit Required:</strong> UGX " +
+          Number(t.depositRequired || 0)
+            .toLocaleString() +
+          "</p>" +
+
+          "<p><strong>Status:</strong> " +
+          t.status +
+          "</p>";
+
+
+        if(
+          t.status ===
+          "waiting_admin"
+        ){
+
+          const button =
+            document.createElement("button");
+
+          button.className =
+            "clear-btn";
+
+          button.textContent =
+            "CLEAR DEMO REQUIREMENT";
+
+
+          button.onclick =
+            function(){
+
+              clearTrainee(
+                t.userId
+              );
+
+            };
+
+
+          card.appendChild(button);
+
+        }
+
+
+        container.appendChild(card);
+
+      }
+    );
+
+
+  }catch(error){
+
+    console.error(error);
+
+    container.innerHTML =
+      "<p>❌ Unable to connect to training server.</p>";
+
+  }
+
+}
+
+
+async function clearTrainee(userId){
+
+  const demoBalance =
+    prompt(
+      "Enter DEMO balance after clearance:",
+      "50000"
+    );
+
+
+  if(demoBalance === null)
+    return;
+
+
+  const amount =
+    Number(demoBalance);
+
+
+  if(
+    !Number.isFinite(amount) ||
+    amount <= 0
+  ){
+
+    alert(
+      "Enter a valid demo balance greater than zero."
+    );
+
+    return;
+
+  }
+
+
+  try{
+
+    const response =
+      await fetch(
+        "/api/training/admin-clear",
+        {
+          method:"POST",
+
+          headers:{
+            "Content-Type":
+              "application/json"
+          },
+
+          body:
+            JSON.stringify({
+              userId:userId,
+              demoBalance:amount
+            })
+        }
+      );
+
+
+    const data =
+      await response.json();
+
+
+    if(!response.ok){
+
+      alert(
+        data.error ||
+        "Clearance failed."
+      );
+
+      return;
+
+    }
+
+
+    alert(
+      "✅ Demo requirement cleared."
+    );
+
+
+    loadTrainees();
+
+
+  }catch(error){
+
+    console.error(error);
+
+    alert(
+      "Unable to connect to training server."
+    );
+
+  }
+
+}
+
+
+loadSettings();
+
+</script>
+
+</body>
+</html>
