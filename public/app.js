@@ -166,10 +166,61 @@ async function checkout(e){e.preventDefault();try{let j=await api("/api/orders",
               ${order.payment||"Cash on Delivery"}
             </p>
 
-            <p>
-              <b>Status:</b>
-              ${order.status||"Pending"}
-            </p>
+            <div style="
+  margin:12px 0;
+  padding:12px;
+  background:#f8f9fa;
+  border-radius:8px;
+">
+
+  <label>
+    <b>Order Status</b>
+  </label>
+
+  <select
+    onchange="updateSellerOrderStatus('${order.id}', this.value)"
+    style="
+      width:100%;
+      padding:10px;
+      margin-top:6px;
+      border:1px solid #ccc;
+      border-radius:6px;
+    "
+  >
+
+    <option value="Pending"
+      ${order.status==="Pending" ? "selected" : ""}>
+      Pending
+    </option>
+
+    <option value="Confirmed"
+      ${order.status==="Confirmed" ? "selected" : ""}>
+      Confirmed
+    </option>
+
+    <option value="Processing"
+      ${order.status==="Processing" ? "selected" : ""}>
+      Processing
+    </option>
+
+    <option value="Out for delivery"
+      ${order.status==="Out for delivery" ? "selected" : ""}>
+      Out for delivery
+    </option>
+
+    <option value="Delivered"
+      ${order.status==="Delivered" ? "selected" : ""}>
+      Delivered
+    </option>
+
+    <option value="Cancelled"
+      ${order.status==="Cancelled" ? "selected" : ""}>
+      Cancelled
+    </option>
+
+  </select>
+
+</div>
 
             <h4>Products purchased</h4>
 
