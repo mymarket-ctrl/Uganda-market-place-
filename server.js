@@ -704,3 +704,301 @@ async function api(req, res, url) {
       training: t
     });
 	  }
+  // ADMIN: VIEW TRAINEES
+  if (
+    req.method === "GET" &&
+    url.pathname === "/api/training/admin-trainees"
+  ) {
+
+    const adminEmail =
+      String(
+        url.searchParams.get("adminEmail") || ""
+      ).toLowerCase();
+
+    const admin = db.users.find(
+      u =>
+        u.email.toLowerCase() === adminEmail &&
+        u.role === "admin"
+    );
+
+    if (!admin) {
+      return json(res, 403, {
+        error:
+          "Administrator authorization required"
+      });
+    }
+
+    return json(res, 200, {
+      trainees: db.trainingUsers
+    });
+  }
+
+  // ADMIN: CLEAR NEGATIVE DEMO EVENT
+  if (
+    req.method === "POST" &&
+    url.pathname === "/api/training/admin-clear"
+  ) {
+
+    const b = await body(req);
+
+    const userId =
+      String(b.userId || "");
+
+    if (!userId) {
+      return json(res, 400, {
+        error: "userId is required"
+      });
+    }
+
+    const t =
+      db.trainingUsers.find(
+        x => x.userId === userId
+      );
+
+    if (!t) {
+      return json(res, 404, {
+        error:
+          "Trainee training record not found"
+      });
+    }
+
+    if (t.status !== "waiting_admin") {
+      return json(res, 400, {
+        error:
+          "No admin action is currently required"
+      });
+    }
+
+    const required =
+      Number(t.depositRequired || 0);
+
+    const maxDeposit =
+      Number(
+        db.training.maxDeposit || 30000
+      );
+
+    if (
+      required <= 0 ||
+      required > maxDeposit
+    ) {
+      return json(res, 400, {
+        error:
+          "Invalid demo deposit requirement"
+      });
+    }
+
+    /*
+      DEMO ONLY.
+      The administrator clears the simulated
+      negative event. No real payment is processed.
+    */
+
+    t.balance = 0;
+    t.depositApproved = true;
+    t.depositRequired = 0;
+    t.negativeAmount = 0;
+    t.status = "active";
+
+    writeDB(db);
+
+    return json(res, 200, {
+      message:
+        "Demo negative event cleared by administrator.",
+      training: t
+    });
+  }
+
+  // START NEW TRAINING CYCLE
+  if (
+    req.method === "POST" &&
+    url.pathname === "/api/training/new-cycle"
+  ) {
+
+    const b = await body(req);
+
+    const userId =
+      String(b.userId || "");
+
+    if (!userId) {
+      return json(res, 400, {
+        error: "userId is required"
+      });
+    }
+
+    const t =
+      db.trainingUsers.find(
+        x => x.userId === userId
+      );
+
+    if (!t) {
+      return json(res, 404, {
+        error:
+          "Training record not found"
+      });
+    }
+
+    if (t.status !== "completed") {
+      return json(res, 400, {
+        error:
+          "The current cycle has not been completed."
+      });
+    }
+
+    t.cycle++;
+    t.balance = 0;
+    t.commission = 0;
+    t.progress = 0;
+    t.status = "active";
+    t.negativeAmount = 0;
+    t.depositRequired = 0;
+    t.depositApproved = false;
+
+    writeDB(db);
+
+    return json(res, 200, {
+      message:
+        "New demo cycle started from UGX 0.",
+      training: t
+    });
+  }
+
+  return json(res, 404, {
+    error: "Not found"
+  });
+}
+
+
+// SERVE WEBSITE FILES
+function serve(req, res) {
+
+  let file =
+    req.url.split("?")[0];
+
+  if (file === "/") {
+    file = "/index.html";
+  }
+
+  const publicRoot =
+    path.join(ROOT, "public");
+
+  const fp =
+    path.normalize(
+      path.join(publicRoot, file)
+    );
+
+  if (
+    !fp.startsWith(publicRoot)
+  ) {
+    return json(res, 403, {
+      error: "Forbidden"
+    });
+  }
+
+  fs.readFile(fp, (err, data) => {
+
+    if (err) {
+      res.writeHead(404, {
+        "Content-Type":
+          "text/plain; charset=utf-8"
+      });
+
+      return res.end(
+        "Not found"
+      );
+    }
+
+    const ext =
+      path.extname(fp);
+
+    const types = {
+      ".html":
+        "text/html; charset=utf-8",
+
+      ".css":
+        "text/css; charset=utf-8",
+
+      ".js":
+        "application/javascript; charset=utf-8",
+
+      ".json":
+        "application/json; charset=utf-8",
+
+      ".png":
+        "image/png",
+
+      ".jpg":
+        "image/jpeg",
+
+      ".jpeg":
+        "image/jpeg",
+
+      ".svg":
+        "image/svg+xml"
+    };
+
+    res.writeHead(200, {
+      "Content-Type":
+        types[ext] ||
+        "application/octet-stream"
+    });
+
+    res.end(data);
+  });
+}
+
+
+// START SERVER
+const server =
+  http.createServer(
+    async (req, res) => {
+
+      try {
+
+        const url =
+          new URL(
+            req.url,
+            `http://${req.headers.host || "localhost"}`
+          );
+
+        if (
+          url.pathname.startsWith("/api/")
+        ) {
+
+          await api(
+            req,
+            res,
+            url
+          );
+
+        } else {
+
+          serve(
+            req,
+            res
+          );
+        }
+
+      } catch (error) {
+
+        console.error(
+          "SERVER ERROR:",
+          error
+        );
+
+        json(res, 500, {
+          error:
+            "Server error"
+        });
+      }
+    }
+  );
+
+
+server.listen(
+  PORT,
+  () => {
+    console.log(
+      `MyMarket Uganda running on port ${PORT}`
+    );
+  }
+);
