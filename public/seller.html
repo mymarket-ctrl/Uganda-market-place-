@@ -219,15 +219,18 @@ async function loadSeller(){
 
   user = getUser();
 
-  if(!user){
+  const user = JSON.parse(localStorage.getItem("mymarket_user") || "null");
+
+if(!user || user.role !== "seller"){
 
     document.querySelector(".wrap").innerHTML = `
       <div class="card">
-        <h2>Please log in first</h2>
-        <p>You must log in as a seller to open Seller Office.</p>
-        <a href="/">Go to MyMarket</a>
+        <h2>Seller account required</h2>
+        <p>Please login using a seller account.</p>
+        <a href="/">Back to MyMarket</a>
       </div>
     `;
+        }
 
     return;
   }
