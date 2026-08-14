@@ -454,3 +454,139 @@ loadSettings();
 
 </body>
   </html>
+async function loadTrainees() {
+  const container = document.getElementById("trainees");
+
+  container.innerHTML = "Loading trainees...";
+
+  try {
+    const user = JSON.parse(
+      localStorage.getItem("mymarket_user") || "null"
+    );
+
+    if (!user || user.role !== "admin") {
+      container.innerHTML =
+        "<p>Administrator login required.</p>";
+      return;
+    }
+
+    const response = await fetch(
+      "/api/training/admin-trainees?adminEmail=" +
+      encodeURIComponent(user.email)
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      container.innerHTML =
+        "<p>❌ " + (data.error || "Unable to load trainees.") + "</p>";
+      return;
+    }
+
+    if (!data.trainees || data.trainees.length === 0) {
+      container.innerHTML =
+        "<p>No trainee records found yet.</p>";
+      return;
+    }
+
+    container.innerHTML = data.trainees.map(t => `
+      <div class="admin-card">
+        <h3>👤 Trainee</h3>
+
+        <p>
+          <strong>Progress:</strong>
+          ${t.progress}/40
+        </p>
+
+        <p>
+          <strong>Demo Balance:</strong>
+          UGX ${Number(t.balance || 0).toLocaleString()}
+        </p>
+
+        <p>
+          <strong>Negative Amount:</strong>
+          UGX ${Number(t.negativeAmount || 0).toLocaleString()}
+        </p>
+
+        <p>
+          <strong>Deposit Required:</strong>
+          UGX ${Number(t.depositRequired || 0).toLocaleString()}
+        </p>
+
+        <p>
+          <strong>Status:</strong>
+          ${t.status}
+        </p>
+
+        ${
+          t.status === "waiting_admin"
+          ? `
+            <button
+              onclick="clearTrainee('${t.userId}')"
+              style="
+                width:100%;
+                padding:12px;
+                background:#198754;
+                color:white;
+                border:none;
+                border-radius:8px;
+                font-weight:bold;
+              ">
+              CLEAR DEMO REQUIREMENT
+            </button>
+          `
+          : ""
+        }
+      </div>
+    `).join("");
+
+  } catch (error) {
+    console.error(error);
+
+    container.innerHTML =
+      "<p>❌ Unable to connect to the training server.</p>";
+  }
+  }async function clearTrainee(userId) {
+
+  const demoBalance =
+    prompt(
+      "Enter the DEMO balance to give the trainee after clearance:",
+      "50000"
+    );
+
+  if (demoBalance === null) return;
+
+  try {
+
+    const response = await fetch(
+      "/api/training/admin-clear",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          userId: userId,
+          demoBalance: Number(demoBalance)
+        })
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      alert(data.error || "Clearance failed.");
+      return;
+    }
+
+    alert("✅ Demo requirement cleared.");
+
+    loadTrainees();
+
+  } catch (error) {
+
+    console.error(error);
+
+    alert("Unable to connect to the training server.");
+  }
+  }
