@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MyMarket - Seller Office</title>
+<link rel="stylesheet" href="/styles.css">
+
+<style>
+.wrap{
+  max-width:1000px;
+  margin:25px auto;
+  padding:20px;
+}
+.card{
+  background:#fff;
+  padding:20px;
+  border-radius:12px;
+  margin-bottom:20px;
+  box-shadow:0 2px 10px rgba(0,0,0,.08);
+}
+.grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+  gap:15px;
+}
+.stat{
+  padding:18px;
+  background:#f8f9fa;
+  border-radius:10px;
+}
+.stat strong{
+  display:block;
+  font-size:25px;
+  margin-top:5px;
+}
+input,select{
+  width:100%;
+  box-sizing:border-box;
+  padding:11px;
+  margin:6px 0 12px;
+  border:1px solid #ccc;
+  border-radius:7px;
+}
+button{
+  border:0;
+  padding:11px 16px;
+  border-radius:7px;
+  cursor:pointer;
+  font-weight:bold;
+}
+.primary{
+  background:#198754;
+  color:white;
+}
+.danger{
+  background:#dc3545;
+  color:white;
+}
+table{
+  width:100%;
+  border-collapse:collapse;
+}
+th,td{
+  padding:10px;
+  border-bottom:1px solid #ddd;
+  text-align:left;
+}
+.message{
+  margin-top:10px;
+  font-weight:bold;
+}
+.small{
+  color:#666;
+}
+</style>
+</head>
+
+<body>
+
+<div class="wrap">
+
+<h1>Seller Office</h1>
+
+<div class="card">
+  <h2 id="shopName">Seller</h2>
+  <p id="sellerEmail" class="small"></p>
+</div>
+
+<div class="card">
+  <h2>Seller Summary</h2>
+
+  <div class="grid">
+    <div class="stat">
+      Products
+      <strong id="productCount">0</strong>
+    </div>
+
+    <div class="stat">
+      Orders
+      <strong id="orderCount">0</strong>
+    </div>
+
+    <div class="stat">
+      Sales
+      <strong id="salesTotal">UGX 0</strong>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+
+<h2>Add Product</h2>
+
+<label>Product Name</label>
+<input id="productName" placeholder="Example: Samsung Galaxy A15">
+
+<label>Category</label>
+<select id="productCategory">
+  <option>Phones</option>
+  <option>Electronics</option>
+  <option>Solar</option>
+  <option>Fashion</option>
+  <option>Home</option>
+  <option>Beauty</option>
+  <option>Groceries</option>
+</select>
+
+<label>Price (UGX)</label>
+<input id="productPrice" type="number">
+
+<label>Stock</label>
+<input id="productStock" type="number">
+
+<label>Image / Emoji</label>
+<input id="productImage" placeholder="📱">
+
+<button class="primary" onclick="addProduct()">
+  ADD PRODUCT
+</button>
+
+<div id="message" class="message"></div>
+
+</div>
+
+<div class="card">
+
+<h2>My Products</h2>
+
+<div style="overflow-x:auto">
+<table>
+<thead>
+<tr>
+<th>Product</th>
+<th>Category</th>
+<th>Price</th>
+<th>Stock</th>
+</tr>
+</thead>
+
+<tbody id="productsTable"></tbody>
+
+</table>
+</div>
+
+</div>
+
+<div class="card">
+
+<h2>My Orders</h2>
+
+<div style="overflow-x:auto">
+<table>
+<thead>
+<tr>
+<th>Order</th>
+<th>Customer</th>
+<th>Total</th>
+<th>Status</th>
+</tr>
+</thead>
+
+<tbody id="ordersTable"></tbody>
+
+</table>
+</div>
+
+</div>
+
+<p>
+<a href="/">← Back to MyMarket</a>
+</p>
+
+</div>
+
+<script>
+
+let user = null;
+let products = [];
+let orders = [];
+
+function money(n){
+  return "UGX " + Number(n || 0).toLocaleString();
+}
+
+function getUser(){
+
+  try{
+    return JSON.parse(
+      localStorage.getItem("mymarket_user") || "null"
+    );
+  }catch(e){
+    return null;
+  }
+
+}
+
+async function loadSeller(){
+
+  user = getUser();
+
+  if(!user){
+
+    document.querySelector(".wrap").innerHTML = `
+      <div class="card">
+        <h2>Please log in first</h2>
+        <p>You must log in as a seller to open Seller Office.</p>
+        <a href="/">Go to MyMarket</a>
+      </div>
+    `;
+
+    return;
+  }
+
+  if(user.role !== "seller"){
+
+    document.querySelector(".wrap").innerHTML = `
+      <div class="card">
+        <h2>Seller account required</h2>
+        <p>The currently logged-in account is not a seller account.</p>
+        <a href="/">Back to MyMarket</a>
+      </div>
+    `;
+
+    return;
+  }
+
+  document.getElementById("shopName").textContent =
+    user.shop || user.name || "Seller";
+
+  document.getElementById("sellerEmail").textContent =
+    user.email || "";
+
+  await loadProducts();
+  await loadOrders();
+
+}
+
+async function loadProducts(){
+
+  try{
+
+    const response =
+      await fetch("/api/products");
+
+    const data =
+      await response.json();
+
+    products =
+      (data.products || [])
+      .filter(p => p.sellerId === user.id);
+
+    document.getElementById("productCount")
+      .textContent = products.length;
+
+    const table =
+      document.getElementById("productsTable");
+
+    table.innerHTML = "";
+
+    products.forEach(p => {
+
+      table.innerHTML += `
+        <tr>
+          <td>${escapeHtml(p.image || "")}
+              ${escapeHtml(p.name)}</td>
+          <td>${escapeHtml(p.category)}</td>
+          <td>${money(p.price)}</td>
+          <td>${Number(p.stock || 0)}</td>
+        </tr>
+      `;
+
+    });
+
+  }catch(error){
+
+    console.error(error);
+
+  }
+
+}
+
+async function loadOrders(){
+
+  try{
+
+    const response =
+      await fetch(
+        "/api/orders?role=seller&userId=" +
+        encodeURIComponent(user.id)
+      );
+
+    const data =
+      await response.json();
+
+    orders = data.orders || [];
+
+    document.getElementById("orderCount")
+      .textContent = orders.length;
+
+    const sales =
+      orders.reduce(
+        (sum,o) => sum + Number(o.total || 0),
+        0
+      );
+
+    document.getElementById("salesTotal")
+      .textContent = money(sales);
+
+    const table =
+      document.getElementById("ordersTable");
+
+    table.innerHTML = "";
+
+    orders.forEach(o => {
+
+      table.innerHTML += `
+        <tr>
+          <td>${escapeHtml(o.id)}</td>
+          <td>${escapeHtml(o.customerName || "Guest")}</td>
+          <td>${money(o.total)}</td>
+          <td>${escapeHtml(o.status || "Pending")}</td>
+        </tr>
+      `;
+
+    });
+
+  }catch(error){
+
+    console.error(error);
+
+  }
+
+}
+
+async function addProduct(){
+
+  const name =
+    document.getElementById("productName").value.trim();
+
+  const category =
+    document.getElementById("productCategory").value;
+
+  const price =
+    Number(document.getElementById("productPrice").value);
+
+  const stock =
+    Number(document.getElementById("productStock").value);
+
+  const image =
+    document.getElementById("productImage").value.trim();
+
+  const message =
+    document.getElementById("message");
+
+  if(!name || price <= 0){
+
+    message.textContent =
+      "Please enter a product name and valid price.";
+
+    return;
+  }
+
+  try{
+
+    const response =
+      await fetch("/api/products",{
+        method:"POST",
+        headers:{
+          "Content-Type":"application/json"
+        },
+        body:JSON.stringify({
+          name,
+          category,
+          price,
+          stock,
+          sellerId:user.id,
+          image:image || "🛍️"
+        })
+      });
+
+    const data =
+      await response.json();
+
+    if(!response.ok){
+
+      message.textContent =
+        "❌ " + (data.error || "Unable to add product");
+
+      return;
+    }
+
+    message.textContent =
+      "✅ Product added successfully.";
+
+    document.getElementById("productName").value="";
+    document.getElementById("productPrice").value="";
+    document.getElementById("productStock").value="";
+    document.getElementById("productImage").value="";
+
+    await loadProducts();
+
+  }catch(error){
+
+    console.error(error);
+
+    message.textContent =
+      "❌ Unable to connect to server.";
+
+  }
+
+}
+
+function escapeHtml(value){
+
+  return String(value)
+    .replace(/&/g,"&amp;")
+    .replace(/</g,"&lt;")
+    .replace(/>/g,"&gt;")
+    .replace(/"/g,"&quot;")
+    .replace(/'/g,"&#039;");
+
+}
+
+loadSeller();
+
+</script>
+
+</body>
+</html>
