@@ -73,6 +73,8 @@ const seed = {
 
   orders: [],
 
+  withdrawals: [],
+
   training: {
     startingBalance: 0,
     totalTasks: 40,
@@ -124,71 +126,348 @@ const seed = {
   },
 
   trainingUsers: []
-};
-
-if (!fs.existsSync(DATA)) {
+};if (!fs.existsSync(DATA)) {
   fs.mkdirSync(DATA, { recursive: true });
 }
 
 if (!fs.existsSync(DB)) {
-  fs.writeFileSync(DB, JSON.stringify(seed, null, 2));
+  fs.writeFileSync(
+    DB,
+    JSON.stringify(seed, null, 2)
+  );
 }
 
 function readDB() {
-  return JSON.parse(fs.readFileSync(DB, "utf8"));
+  const db = JSON.parse(
+    fs.readFileSync(DB, "utf8")
+  );
+
+  if (!Array.isArray(db.users)) {
+    db.users = [];
+  }
+
+  if (!Array.isArray(db.products)) {
+    db.products = [];
+  }
+
+  if (!Array.isArray(db.orders)) {
+    db.orders = [];
+  }
+
+  if (!Array.isArray(db.withdrawals)) {
+    db.withdrawals = [];
+  }
+
+  if (!Array.isArray(db.trainingUsers)) {
+    db.trainingUsers = [];
+  }
+
+  if (!db.training) {
+    db.training = seed.training;
+  }
+
+  return db;
 }
 
 function writeDB(db) {
-  fs.writeFileSync(DB, JSON.stringify(db, null, 2));
+  fs.writeFileSync(
+    DB,
+    JSON.stringify(db, null, 2)
+  );
 }
 
 function id(prefix) {
-  return prefix + "_" + crypto.randomBytes(5).toString("hex");
+  return (
+    prefix +
+    "_" +
+    crypto.randomBytes(5).toString("hex")
+  );
 }
 
 function json(res, code, obj) {
-  const output = JSON.stringify(obj);
+  const output =
+    JSON.stringify(obj);
 
   res.writeHead(code, {
-    "Content-Type": "application/json; charset=utf-8",
-    "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Headers": "Content-Type",
-    "Access-Control-Allow-Methods": "GET,POST,PUT,OPTIONS"
+    "Content-Type":
+      "application/json; charset=utf-8",
+
+    "Access-Control-Allow-Origin":
+      "*",
+
+    "Access-Control-Allow-Headers":
+      "Content-Type",
+
+    "Access-Control-Allow-Methods":
+      "GET,POST,PUT,OPTIONS"
   });
 
   res.end(output);
 }
 
 function body(req) {
-  return new Promise((resolve, reject) => {
-    let s = "";
+  return new Promise(
+    (resolve, reject) => {
+      let s = "";
 
-    req.on("data", chunk => {
-      s += chunk;
-    });
+      req.on("data", chunk => {
+        s += chunk;
+      });
 
-    req.on("end", () => {
-      try {
-        resolve(s ? JSON.parse(s) : {});
-      } catch (e) {
-        reject(e);
-      }
-    });
-  });
+      req.on("end", () => {
+        try {
+          resolve(
+            s
+              ? JSON.parse(s)
+              : {}
+          );
+        } catch (e) {
+          reject(e);
+        }
+      });
+    }
+  );
 }
 
 function safeUser(user) {
-  const { password, ...cleanUser } = user;
+  const {
+    password,
+    ...cleanUser
+  } = user;
+
   return cleanUser;
-	    }
-async function api(req, res, url) {
+}
+
+function money(n) {
+  return Number(n || 0);
+}
+
+function findUser(db, userId) {
+  return db.users.find(
+    u => u.id === userId
+  );
+}
+
+function isAdmin(
+  db,
+  adminEmail,
+  adminPassword
+) {
+  const email =
+    String(
+      adminEmail || ""
+    ).toLowerCase();
+
+  const admin =
+    db.users.find(
+      u =>
+        String(
+          u.email || ""
+        ).toLowerCase() === email &&
+        u.role === "admin" &&
+        u.password === adminPassword
+    );
+
+  return admin || null;
+	  }function sellerProductIds(db, sellerId) {
+  return db.products
+    .filter(
+      p => p.sellerId === sellerId
+    )
+    .map(p => p.id);
+}
+
+function sellerOrderAmount(
+  db,
+  order,
+  sellerId
+) {
+  const productIds =
+    sellerProductIds(
+      db,
+      sellerId
+    );
+
+  return order.items
+    .filter(
+      item =>
+        productIds.includes(
+          item.id
+        )
+    )
+    .reduce(
+      (sum, item) =>
+        sum +
+        money(item.price) *
+        money(item.qty),
+      0
+    );
+}
+
+function sellerPendingEarnings(
+  db,
+  sellerId
+) {
+  return db.orders
+    .filter(order => {
+
+      const amount =
+        sellerOrderAmount(
+          db,
+          order,
+          sellerId
+        );
+
+      return (
+        amount > 0 &&
+        ![
+          "Delivered",
+          "Completed",
+          "Cancelled"
+        ].includes(
+          String(order.status)
+        )
+      );
+    })
+    .reduce(
+      (sum, order) =>
+        sum +
+        sellerOrderAmount(
+          db,
+          order,
+          sellerId
+        ),
+      0
+    );
+}
+
+function sellerDeliveredEarnings(
+  db,
+  sellerId
+) {
+  return db.orders
+    .filter(order =>
+      [
+        "Delivered",
+        "Completed"
+      ].includes(
+        String(order.status)
+      )
+    )
+    .reduce(
+      (sum, order) =>
+        sum +
+        sellerOrderAmount(
+          db,
+          order,
+          sellerId
+        ),
+      0
+    );
+}
+
+function sellerPaidWithdrawals(
+  db,
+  sellerId
+) {
+  return db.withdrawals
+    .filter(
+      w =>
+        w.sellerId === sellerId &&
+        w.status === "Paid"
+    )
+    .reduce(
+      (sum, w) =>
+        sum +
+        money(w.amount),
+      0
+    );
+}
+
+function sellerPendingWithdrawals(
+  db,
+  sellerId
+) {
+  return db.withdrawals
+    .filter(
+      w =>
+        w.sellerId === sellerId &&
+        w.status === "Pending"
+    )
+    .reduce(
+      (sum, w) =>
+        sum +
+        money(w.amount),
+      0
+    );
+}
+
+function sellerWallet(
+  db,
+  sellerId
+) {
+  const delivered =
+    sellerDeliveredEarnings(
+      db,
+      sellerId
+    );
+
+  const paid =
+    sellerPaidWithdrawals(
+      db,
+      sellerId
+    );
+
+  const pendingWithdrawal =
+    sellerPendingWithdrawals(
+      db,
+      sellerId
+    );
+
+  const available =
+    Math.max(
+      0,
+      delivered -
+      paid -
+      pendingWithdrawal
+    );
+
+  const pendingSales =
+    sellerPendingEarnings(
+      db,
+      sellerId
+    );
+
+  return {
+    totalDeliveredEarnings:
+      delivered,
+
+    pendingSales:
+      pendingSales,
+
+    totalWithdrawn:
+      paid,
+
+    pendingWithdrawals:
+      pendingWithdrawal,
+
+    availableBalance:
+      available,
+
+    currency:
+      "UGX"
+  };
+}async function api(req, res, url) {
 
   if (req.method === "OPTIONS") {
     res.writeHead(204, {
       "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Headers": "Content-Type",
-      "Access-Control-Allow-Methods": "GET,POST,PUT,OPTIONS"
+      "Access-Control-Allow-Headers":
+        "Content-Type",
+      "Access-Control-Allow-Methods":
+        "GET,POST,PUT,OPTIONS"
     });
+
     return res.end();
   }
 
@@ -198,31 +477,78 @@ async function api(req, res, url) {
     db.trainingUsers = [];
   }
 
-  // PRODUCTS
-  if (req.method === "GET" && url.pathname === "/api/products") {
-
-    let list = db.products.filter(p => p.active !== false);
-
-    const q = (url.searchParams.get("q") || "").toLowerCase();
-    const cat = url.searchParams.get("category");
-
-    if (q) {
-      list = list.filter(p =>
-        (p.name + " " + p.category)
-          .toLowerCase()
-          .includes(q)
-      );
-    }
-
-    if (cat && cat !== "All") {
-      list = list.filter(p => p.category === cat);
-    }
-
-    return json(res, 200, { products: list });
+  if (!db.withdrawals) {
+    db.withdrawals = [];
   }
 
-  // CATEGORIES
-  if (req.method === "GET" && url.pathname === "/api/categories") {
+  /*
+  =====================================================
+  PRODUCTS
+  =====================================================
+  */
+
+  if (
+    req.method === "GET" &&
+    url.pathname === "/api/products"
+  ) {
+
+    let list =
+      db.products.filter(
+        p => p.active !== false
+      );
+
+    const q =
+      (
+        url.searchParams.get("q") ||
+        ""
+      ).toLowerCase();
+
+    const cat =
+      url.searchParams.get(
+        "category"
+      );
+
+    if (q) {
+      list =
+        list.filter(p =>
+          (
+            p.name +
+            " " +
+            p.category
+          )
+            .toLowerCase()
+            .includes(q)
+        );
+    }
+
+    if (
+      cat &&
+      cat !== "All"
+    ) {
+      list =
+        list.filter(
+          p =>
+            p.category === cat
+        );
+    }
+
+    return json(res, 200, {
+      products: list,
+      currency: "UGX"
+    });
+  }
+
+  /*
+  =====================================================
+  CATEGORIES
+  =====================================================
+  */
+
+  if (
+    req.method === "GET" &&
+    url.pathname ===
+      "/api/categories"
+  ) {
 
     return json(res, 200, {
       categories: [
@@ -237,94 +563,174 @@ async function api(req, res, url) {
     });
   }
 
-  // LOGIN
-  if (req.method === "POST" && url.pathname === "/api/login") {
+  /*
+  =====================================================
+  LOGIN
+  =====================================================
+  */
 
-    const b = await body(req);
+  if (
+    req.method === "POST" &&
+    url.pathname === "/api/login"
+  ) {
 
-    const u = db.users.find(x =>
-      x.email.toLowerCase() ===
-        String(b.email || "").toLowerCase() &&
-      x.password === b.password
-    );
+    const b =
+      await body(req);
+
+    const u =
+      db.users.find(x =>
+        String(
+          x.email || ""
+        ).toLowerCase() ===
+          String(
+            b.email || ""
+          ).toLowerCase() &&
+        x.password ===
+          b.password
+      );
 
     if (!u) {
       return json(res, 401, {
-        error: "Invalid email or password"
+        error:
+          "Invalid email or password"
       });
     }
 
     return json(res, 200, {
-      user: safeUser(u)
+      user:
+        safeUser(u)
     });
   }
 
-  // REGISTER
-  if (req.method === "POST" && url.pathname === "/api/register") {
+  /*
+  =====================================================
+  REGISTER
+  =====================================================
+  */
 
-    const b = await body(req);
+  if (
+    req.method === "POST" &&
+    url.pathname ===
+      "/api/register"
+  ) {
 
-    if (!b.name || !b.email || !b.password) {
+    const b =
+      await body(req);
+
+    if (
+      !b.name ||
+      !b.email ||
+      !b.password
+    ) {
       return json(res, 400, {
-        error: "Name, email and password are required"
+        error:
+          "Name, email and password are required"
       });
     }
 
     if (
       db.users.some(
         u =>
-          u.email.toLowerCase() ===
-          b.email.toLowerCase()
+          String(
+            u.email || ""
+          ).toLowerCase() ===
+          String(
+            b.email || ""
+          ).toLowerCase()
       )
     ) {
       return json(res, 409, {
-        error: "Email already exists"
+        error:
+          "Email already exists"
       });
     }
 
     const u = {
-      id: id("u"),
-      name: b.name,
-      email: b.email,
-      password: b.password,
-      role: b.role === "seller" ? "seller" : "customer",
-      shop: b.shop || ""
+      id:
+        id("u"),
+
+      name:
+        b.name,
+
+      email:
+        b.email,
+
+      password:
+        b.password,
+
+      role:
+        b.role === "seller"
+          ? "seller"
+          : "customer",
+
+      shop:
+        b.shop || "",
+
+      mobileMoney: {
+        network: "",
+        number: ""
+      }
     };
 
     db.users.push(u);
+
     writeDB(db);
 
     return json(res, 201, {
-      user: safeUser(u)
+      user:
+        safeUser(u)
     });
   }
 
-  // CREATE ORDER
-  if (req.method === "POST" && url.pathname === "/api/orders") {
+  /*
+  =====================================================
+  CREATE ORDER
+  =====================================================
+  */
 
-    const b = await body(req);
+  if (
+    req.method === "POST" &&
+    url.pathname ===
+      "/api/orders"
+  ) {
 
-    if (!b.items || !b.items.length) {
+    const b =
+      await body(req);
+
+    if (
+      !b.items ||
+      !b.items.length
+    ) {
       return json(res, 400, {
-        error: "Cart is empty"
+        error:
+          "Cart is empty"
       });
     }
 
-    const total = b.items.reduce(
-      (sum, item) =>
-        sum +
-        Number(item.price) *
-        Number(item.qty),
-      0
-    );
-
-    for (const item of b.items) {
-
-      const p = db.products.find(
-        x => x.id === item.id
+    const total =
+      b.items.reduce(
+        (sum, item) =>
+          sum +
+          money(item.price) *
+          money(item.qty),
+        0
       );
 
-      if (!p || p.stock < item.qty) {
+    for (
+      const item of b.items
+    ) {
+
+      const p =
+        db.products.find(
+          x =>
+            x.id === item.id
+        );
+
+      if (
+        !p ||
+        p.stock <
+          item.qty
+      ) {
         return json(res, 400, {
           error:
             "Insufficient stock for " +
@@ -333,75 +739,152 @@ async function api(req, res, url) {
       }
     }
 
-    b.items.forEach(item => {
+    b.items.forEach(
+      item => {
 
-      const p = db.products.find(
-        x => x.id === item.id
-      );
+        const p =
+          db.products.find(
+            x =>
+              x.id === item.id
+          );
 
-      p.stock -= Number(item.qty);
-    });
+        p.stock -=
+          money(item.qty);
+      }
+    );
 
     const order = {
-      id: id("ord"),
-      customerId: b.customerId || "guest",
-      customerName: b.customerName || "Guest",
-      phone: b.phone || "",
-      address: b.address || "",
-      items: b.items,
-      total,
-      status: "Pending",
-      payment: b.payment || "Cash on Delivery",
-      createdAt: new Date().toISOString()
+      id:
+        id("ord"),
+
+      customerId:
+        b.customerId ||
+        "guest",
+
+      customerName:
+        b.customerName ||
+        "Guest",
+
+      phone:
+        b.phone || "",
+
+      address:
+        b.address || "",
+
+      items:
+        b.items,
+
+      total:
+
+        total,
+
+      status:
+        "Pending",
+
+      payment:
+        b.payment ||
+        "Cash on Delivery",
+
+      createdAt:
+        new Date()
+          .toISOString()
     };
 
-    db.orders.unshift(order);
+    db.orders.unshift(
+      order
+    );
+
     writeDB(db);
 
     return json(res, 201, {
-      order
+      order,
+      currency:
+        "UGX"
     });
-  }
+  }  /*
+  =====================================================
+  GET ORDERS
+  =====================================================
+  */
 
-  // GET ORDERS
-  if (req.method === "GET" && url.pathname === "/api/orders") {
+  if (
+    req.method === "GET" &&
+    url.pathname ===
+      "/api/orders"
+  ) {
 
-    const role = url.searchParams.get("role");
-    const uid = url.searchParams.get("userId");
-
-    let orders = db.orders;
-
-    if (role === "customer") {
-      orders = orders.filter(
-        o => o.customerId === uid
+    const role =
+      url.searchParams.get(
+        "role"
       );
+
+    const uid =
+      url.searchParams.get(
+        "userId"
+      );
+
+    let orders =
+      db.orders;
+
+    if (
+      role === "customer"
+    ) {
+      orders =
+        orders.filter(
+          o =>
+            o.customerId === uid
+        );
     }
 
-    if (role === "seller") {
+    if (
+      role === "seller"
+    ) {
 
-      const ids = db.products
-        .filter(p => p.sellerId === uid)
-        .map(p => p.id);
+      const ids =
+        sellerProductIds(
+          db,
+          uid
+        );
 
-      orders = orders.filter(
-        o =>
-          o.items.some(
-            item => ids.includes(item.id)
-          )
-      );
+      orders =
+        orders.filter(
+          o =>
+            o.items.some(
+              item =>
+                ids.includes(
+                  item.id
+                )
+            )
+        );
     }
 
     return json(res, 200, {
-      orders
+      orders,
+      currency:
+        "UGX"
     });
   }
 
-  // CREATE PRODUCT
-  if (req.method === "POST" && url.pathname === "/api/products") {
+  /*
+  =====================================================
+  CREATE PRODUCT
+  =====================================================
+  */
 
-    const b = await body(req);
+  if (
+    req.method === "POST" &&
+    url.pathname ===
+      "/api/products"
+  ) {
 
-    if (!b.name || !b.price || !b.sellerId) {
+    const b =
+      await body(req);
+
+    if (
+      !b.name ||
+      !b.price ||
+      !b.sellerId
+    ) {
       return json(res, 400, {
         error:
           "Product name, price and sellerId are required"
@@ -409,77 +892,147 @@ async function api(req, res, url) {
     }
 
     const product = {
-      id: id("p"),
-      name: b.name,
-      category: b.category || "Other",
-      price: Number(b.price),
-      stock: Number(b.stock || 0),
-      sellerId: b.sellerId,
-      image: b.image || "🛍️",
-      active: true
+      id:
+        id("p"),
+
+      name:
+        b.name,
+
+      category:
+        b.category ||
+        "Other",
+
+      price:
+        money(b.price),
+
+      stock:
+        money(b.stock),
+
+      sellerId:
+        b.sellerId,
+
+      image:
+        b.image ||
+        "🛍️",
+
+      active:
+        true
     };
 
-    db.products.push(product);
+    db.products.push(
+      product
+    );
+
     writeDB(db);
 
     return json(res, 201, {
-      product
+      product,
+      currency:
+        "UGX"
     });
   }
 
-  // UPDATE ORDER
+  /*
+  =====================================================
+  UPDATE ORDER
+  =====================================================
+  */
+
   if (
     req.method === "PUT" &&
-    url.pathname.startsWith("/api/orders/")
+    url.pathname.startsWith(
+      "/api/orders/"
+    )
   ) {
 
     const oid =
-      url.pathname.split("/").pop();
+      url.pathname
+        .split("/")
+        .pop();
 
-    const b = await body(req);
+    const b =
+      await body(req);
 
     const order =
-      db.orders.find(x => x.id === oid);
+      db.orders.find(
+        x =>
+          x.id === oid
+      );
 
     if (!order) {
       return json(res, 404, {
-        error: "Order not found"
+        error:
+          "Order not found"
       });
     }
 
     if (b.status) {
-      order.status = b.status;
+      order.status =
+        b.status;
     }
 
     writeDB(db);
 
     return json(res, 200, {
-      order
+      order,
+      currency:
+        "UGX"
     });
   }
 
-  // ADMIN STATS
+  /*
+  =====================================================
+  ADMIN STATS
+  =====================================================
+  */
+
   if (
     req.method === "GET" &&
-    url.pathname === "/api/admin/stats"
+    url.pathname ===
+      "/api/admin/stats"
   ) {
 
     const revenue =
       db.orders.reduce(
         (sum, order) =>
-          sum + Number(order.total || 0),
+          sum +
+          money(
+            order.total
+          ),
+        0
+      );
+
+    const pendingWithdrawals =
+      db.withdrawals.filter(
+        w =>
+          w.status ===
+          "Pending"
+      );
+
+    const withdrawalAmount =
+      pendingWithdrawals.reduce(
+        (sum, w) =>
+          sum +
+          money(
+            w.amount
+          ),
         0
       );
 
     return json(res, 200, {
+
       customers:
         db.users.filter(
-          u => u.role === "customer"
+          u =>
+            u.role ===
+            "customer"
         ).length,
 
       sellers:
         db.users.filter(
-          u => u.role === "seller"
+          u =>
+            u.role ===
+            "seller"
         ).length,
 
       products:
@@ -488,179 +1041,915 @@ async function api(req, res, url) {
       orders:
         db.orders.length,
 
-      revenue
+      revenue,
+
+      pendingWithdrawals:
+        pendingWithdrawals.length,
+
+      pendingWithdrawalAmount:
+        withdrawalAmount,
+
+      currency:
+        "UGX"
     });
   }
 
-  // TRAINING SETTINGS - GET
+  /*
+  =====================================================
+  SELLER WALLET
+  =====================================================
+  */
+
   if (
     req.method === "GET" &&
-    url.pathname === "/api/training/settings"
+    url.pathname ===
+      "/api/seller/wallet"
   ) {
+
+    const sellerId =
+      url.searchParams.get(
+        "sellerId"
+      );
+
+    if (!sellerId) {
+      return json(res, 400, {
+        error:
+          "sellerId is required"
+      });
+    }
+
+    const seller =
+      findUser(
+        db,
+        sellerId
+      );
+
+    if (
+      !seller ||
+      seller.role !==
+        "seller"
+    ) {
+      return json(res, 403, {
+        error:
+          "Seller account required"
+      });
+    }
 
     return json(res, 200, {
-      training: db.training
-    });
-  }
+      wallet:
+        sellerWallet(
+          db,
+          sellerId
+        ),
 
-  // TRAINING SETTINGS - SAVE
+      currency:
+        "UGX"
+    });
+				}  /*
+  =====================================================
+  SAVE SELLER MOBILE MONEY DETAILS
+  =====================================================
+  */
+
   if (
     req.method === "POST" &&
-    url.pathname === "/api/training/settings"
+    url.pathname ===
+      "/api/seller/mobile-money"
   ) {
 
-    const b = await body(req);
+    const b =
+      await body(req);
 
-    if (b.startingBalance !== undefined) {
-      db.training.startingBalance =
-        Number(b.startingBalance);
+    const sellerId =
+      String(
+        b.sellerId || ""
+      );
+
+    const network =
+      String(
+        b.network || ""
+      ).trim();
+
+    const number =
+      String(
+        b.number || ""
+      ).trim();
+
+    if (!sellerId) {
+      return json(res, 400, {
+        error:
+          "sellerId is required"
+      });
     }
 
-    if (b.maxDeposit !== undefined) {
-      db.training.maxDeposit =
-        Number(b.maxDeposit);
-    }
+    const seller =
+      findUser(
+        db,
+        sellerId
+      );
 
-    if (b.commissionPerTask !== undefined) {
-      db.training.commissionPerTask =
-        Number(b.commissionPerTask);
+    if (
+      !seller ||
+      seller.role !==
+        "seller"
+    ) {
+      return json(res, 403, {
+        error:
+          "Seller account required"
+      });
     }
 
     if (
-      Array.isArray(b.products) &&
-      b.products.length === 40
+      ![
+        "MTN",
+        "Airtel"
+      ].includes(network)
     ) {
-      db.training.products = b.products;
+      return json(res, 400, {
+        error:
+          "Select MTN or Airtel Mobile Money"
+      });
     }
+
+    if (
+      !/^07\d{8}$/.test(
+        number
+      )
+    ) {
+      return json(res, 400, {
+        error:
+          "Enter a valid Ugandan Mobile Money number"
+      });
+    }
+
+    seller.mobileMoney = {
+      network,
+      number
+    };
 
     writeDB(db);
 
     return json(res, 200, {
       message:
-        "Training settings updated",
-      training: db.training
+        "Mobile Money details saved",
+
+      mobileMoney:
+        seller.mobileMoney
     });
   }
 
-  // TRAINING STATE
+  /*
+  =====================================================
+  CREATE SELLER WITHDRAWAL
+  =====================================================
+  */
+
+  if (
+    req.method === "POST" &&
+    url.pathname ===
+      "/api/withdrawals"
+  ) {
+
+    const b =
+      await body(req);
+
+    const sellerId =
+      String(
+        b.sellerId || ""
+      );
+
+    const amount =
+      money(b.amount);
+
+    if (!sellerId) {
+      return json(res, 400, {
+        error:
+          "sellerId is required"
+      });
+    }
+
+    const seller =
+      findUser(
+        db,
+        sellerId
+      );
+
+    if (
+      !seller ||
+      seller.role !==
+        "seller"
+    ) {
+      return json(res, 403, {
+        error:
+          "Seller account required"
+      });
+    }
+
+    if (
+      !Number.isFinite(
+        amount
+      ) ||
+      amount <= 0
+    ) {
+      return json(res, 400, {
+        error:
+          "Enter a valid withdrawal amount"
+      });
+    }
+
+    const wallet =
+      sellerWallet(
+        db,
+        sellerId
+      );
+
+    if (
+      amount >
+      wallet.availableBalance
+    ) {
+      return json(res, 400, {
+        error:
+          "Insufficient available balance",
+
+        availableBalance:
+          wallet.availableBalance,
+
+        currency:
+          "UGX"
+      });
+    }
+
+    let network =
+      String(
+        b.network ||
+        (
+          seller.mobileMoney &&
+          seller.mobileMoney.network
+        ) ||
+        ""
+      ).trim();
+
+    let number =
+      String(
+        b.number ||
+        (
+          seller.mobileMoney &&
+          seller.mobileMoney.number
+        ) ||
+        ""
+      ).trim();
+
+    if (
+      ![
+        "MTN",
+        "Airtel"
+      ].includes(network)
+    ) {
+      return json(res, 400, {
+        error:
+          "Select MTN or Airtel Mobile Money"
+      });
+    }
+
+    if (
+      !/^07\d{8}$/.test(
+        number
+      )
+    ) {
+      return json(res, 400, {
+        error:
+          "Enter a valid Ugandan Mobile Money number"
+      });
+    }
+
+    const withdrawal = {
+
+      id:
+        id("wd"),
+
+      sellerId:
+        sellerId,
+
+      sellerName:
+        seller.name,
+
+      shop:
+        seller.shop ||
+        "",
+
+      amount:
+        amount,
+
+      currency:
+        "UGX",
+
+      network:
+        network,
+
+      mobileNumber:
+        number,
+
+      status:
+        "Pending",
+
+      transactionReference:
+        "",
+
+      requestedAt:
+        new Date()
+          .toISOString(),
+
+      paidAt:
+        null,
+
+      rejectedAt:
+        null,
+
+      adminNote:
+        ""
+    };
+
+    db.withdrawals.unshift(
+      withdrawal
+    );
+
+    writeDB(db);
+
+    return json(res, 201, {
+
+      message:
+        "Withdrawal request submitted successfully. Awaiting administrator payment.",
+
+      withdrawal
+    });
+  }
+
+  /*
+  =====================================================
+  SELLER WITHDRAWAL HISTORY
+  =====================================================
+  */
+
   if (
     req.method === "GET" &&
-    url.pathname === "/api/training/state"
+    url.pathname ===
+      "/api/withdrawals"
+  ) {
+
+    const sellerId =
+      url.searchParams.get(
+        "sellerId"
+      );
+
+    if (!sellerId) {
+      return json(res, 400, {
+        error:
+          "sellerId is required"
+      });
+    }
+
+    const withdrawals =
+      db.withdrawals.filter(
+        w =>
+          w.sellerId ===
+          sellerId
+      );
+
+    return json(res, 200, {
+      withdrawals,
+
+      currency:
+        "UGX"
+    });
+	}  /*
+  =====================================================
+  ADMIN VIEW ALL WITHDRAWALS
+  =====================================================
+  */
+
+  if (
+    req.method === "GET" &&
+    url.pathname ===
+      "/api/admin/withdrawals"
+  ) {
+
+    const adminEmail =
+      String(
+        url.searchParams.get(
+          "adminEmail"
+        ) || ""
+      );
+
+    const adminPassword =
+      String(
+        url.searchParams.get(
+          "adminPassword"
+        ) || ""
+      );
+
+    const admin =
+      isAdmin(
+        db,
+        adminEmail,
+        adminPassword
+      );
+
+    if (!admin) {
+      return json(res, 403, {
+        error:
+          "Administrator authorization required"
+      });
+    }
+
+    return json(res, 200, {
+
+      withdrawals:
+        db.withdrawals,
+
+      currency:
+        "UGX"
+    });
+  }
+
+  /*
+  =====================================================
+  ADMIN PAY OR REJECT WITHDRAWAL
+  =====================================================
+  */
+
+  if (
+    req.method === "PUT" &&
+    url.pathname.startsWith(
+      "/api/withdrawals/"
+    )
+  ) {
+
+    const wid =
+      url.pathname
+        .split("/")
+        .pop();
+
+    const b =
+      await body(req);
+
+    const adminEmail =
+      String(
+        b.adminEmail || ""
+      );
+
+    const adminPassword =
+      String(
+        b.adminPassword || ""
+      );
+
+    const admin =
+      isAdmin(
+        db,
+        adminEmail,
+        adminPassword
+      );
+
+    if (!admin) {
+      return json(res, 403, {
+        error:
+          "Administrator authorization required"
+      });
+    }
+
+    const withdrawal =
+      db.withdrawals.find(
+        w =>
+          w.id === wid
+      );
+
+    if (!withdrawal) {
+      return json(res, 404, {
+        error:
+          "Withdrawal not found"
+      });
+    }
+
+    if (
+      withdrawal.status !==
+      "Pending"
+    ) {
+      return json(res, 400, {
+        error:
+          "This withdrawal has already been processed"
+      });
+    }
+
+    const action =
+      String(
+        b.status || ""
+      ).trim();
+
+    /*
+    =====================================================
+    MARK WITHDRAWAL AS PAID
+    =====================================================
+    */
+
+    if (
+      action === "Paid"
+    ) {
+
+      const reference =
+        String(
+          b.transactionReference ||
+          ""
+        ).trim();
+
+      if (!reference) {
+        return json(res, 400, {
+          error:
+            "Mobile Money transaction reference is required"
+        });
+      }
+
+      withdrawal.status =
+        "Paid";
+
+      withdrawal.transactionReference =
+        reference;
+
+      withdrawal.paidAt =
+        new Date()
+          .toISOString();
+
+      withdrawal.adminNote =
+        String(
+          b.adminNote ||
+          ""
+        );
+
+      withdrawal.processedBy =
+        admin.id;
+
+      writeDB(db);
+
+      return json(res, 200, {
+
+        message:
+          "Withdrawal marked as paid successfully.",
+
+        withdrawal,
+
+        currency:
+          "UGX"
+      });
+    }
+
+    /*
+    =====================================================
+    REJECT WITHDRAWAL
+    =====================================================
+    */
+
+    if (
+      action === "Rejected"
+    ) {
+
+      withdrawal.status =
+        "Rejected";
+
+      withdrawal.rejectedAt =
+        new Date()
+          .toISOString();
+
+      withdrawal.adminNote =
+        String(
+          b.adminNote ||
+          "Withdrawal rejected"
+        );
+
+      withdrawal.processedBy =
+        admin.id;
+
+      writeDB(db);
+
+      return json(res, 200, {
+
+        message:
+          "Withdrawal rejected.",
+
+        withdrawal
+      });
+    }
+
+    return json(res, 400, {
+      error:
+        "Status must be Paid or Rejected"
+    });
+		  }  /*
+  =====================================================
+  TRAINING SETTINGS - GET
+  =====================================================
+  */
+
+  if (
+    req.method === "GET" &&
+    url.pathname ===
+      "/api/training/settings"
+  ) {
+
+    return json(res, 200, {
+      training:
+        db.training,
+
+      currency:
+        "UGX"
+    });
+  }
+
+  /*
+  =====================================================
+  TRAINING SETTINGS - SAVE
+  =====================================================
+  */
+
+  if (
+    req.method === "POST" &&
+    url.pathname ===
+      "/api/training/settings"
+  ) {
+
+    const b =
+      await body(req);
+
+    if (
+      b.startingBalance !==
+      undefined
+    ) {
+      db.training.startingBalance =
+        money(
+          b.startingBalance
+        );
+    }
+
+    if (
+      b.maxDeposit !==
+      undefined
+    ) {
+      db.training.maxDeposit =
+        money(
+          b.maxDeposit
+        );
+    }
+
+    if (
+      b.commissionPerTask !==
+      undefined
+    ) {
+      db.training.commissionPerTask =
+        money(
+          b.commissionPerTask
+        );
+    }
+
+    if (
+      Array.isArray(
+        b.products
+      ) &&
+      b.products.length === 40
+    ) {
+      db.training.products =
+        b.products;
+    }
+
+    writeDB(db);
+
+    return json(res, 200, {
+
+      message:
+        "Training settings updated",
+
+      training:
+        db.training
+    });
+  }
+
+  /*
+  =====================================================
+  TRAINING STATE
+  =====================================================
+  */
+
+  if (
+    req.method === "GET" &&
+    url.pathname ===
+      "/api/training/state"
   ) {
 
     const userId =
-      url.searchParams.get("userId");
+      url.searchParams.get(
+        "userId"
+      );
 
     if (!userId) {
       return json(res, 400, {
-        error: "userId is required"
+        error:
+          "userId is required"
       });
     }
 
     let t =
       db.trainingUsers.find(
-        x => x.userId === userId
+        x =>
+          x.userId ===
+          userId
       );
 
     if (!t) {
 
       t = {
+
         userId,
-        balance: 0,
-        commission: 0,
-        progress: 0,
-        status: "active",
-        negativeAmount: 0,
-        depositRequired: 0,
-        depositApproved: false,
-        cycle: 1,
-        completedCycles: 0
+
+        balance:
+          money(
+            db.training
+              .startingBalance
+          ),
+
+        commission:
+          0,
+
+        progress:
+          0,
+
+        status:
+          "active",
+
+        negativeAmount:
+          0,
+
+        depositRequired:
+          0,
+
+        depositApproved:
+          false,
+
+        cycle:
+          1,
+
+        completedCycles:
+          0,
+
+        totalNegative:
+          0
       };
 
-      db.trainingUsers.push(t);
+      db.trainingUsers.push(
+        t
+      );
+
       writeDB(db);
     }
 
     return json(res, 200, {
-      training: t
+
+      training:
+        t,
+
+      currency:
+        "UGX"
     });
   }
 
-  // TRAINING OPTIMIZE
+  /*
+  =====================================================
+  TRAINING OPTIMIZE
+  =====================================================
+  */
+
   if (
     req.method === "POST" &&
-    url.pathname === "/api/training/optimize"
+    url.pathname ===
+      "/api/training/optimize"
   ) {
 
-    const b = await body(req);
+    const b =
+      await body(req);
 
     const userId =
-      String(b.userId || "");
+      String(
+        b.userId || ""
+      );
 
     if (!userId) {
       return json(res, 400, {
-        error: "userId is required"
+        error:
+          "userId is required"
       });
     }
 
     let t =
       db.trainingUsers.find(
-        x => x.userId === userId
+        x =>
+          x.userId ===
+          userId
       );
 
     if (!t) {
 
       t = {
+
         userId,
+
         balance: 0,
+
         commission: 0,
+
         progress: 0,
+
         status: "active",
+
         negativeAmount: 0,
+
         depositRequired: 0,
-        depositApproved: false,
+
+        depositApproved:
+          false,
+
         cycle: 1,
-        completedCycles: 0
+
+        completedCycles: 0,
+
+        totalNegative: 0
       };
 
-      db.trainingUsers.push(t);
+      db.trainingUsers.push(
+        t
+      );
     }
 
-    if (t.status === "completed") {
+    if (
+      t.status ===
+      "completed"
+    ) {
       return json(res, 400, {
         error:
           "Cycle completed. Start a new cycle."
       });
     }
 
-    if (t.status === "waiting_admin") {
+    if (
+      t.status ===
+      "waiting_admin"
+    ) {
       return json(res, 400, {
-        error: "Admin action required",
+
+        error:
+          "Admin action required",
+
         depositRequired:
-          t.depositRequired
+          t.depositRequired,
+
+        currency:
+          "UGX"
       });
     }
 
-    if (t.progress >= 40) {
+    if (
+      t.progress >= 40
+    ) {
       return json(res, 400, {
         error:
           "Optimization already completed"
       });
     }
 
+    /*
+    -----------------------------------------------
+    COMPLETE ONE PRODUCT OPTIMIZATION
+    -----------------------------------------------
+    */
+
     t.progress++;
 
     const commission =
-      Number(
-        db.training.commissionPerTask ||
-        2500
+      money(
+        db.training
+          .commissionPerTask ||
+          2500
       );
 
-    t.commission += commission;
-    t.balance += commission;
+    t.commission +=
+      commission;
 
-    // Negative demo scenario at 39/40.
-    if (t.progress === 39) {
+    t.balance +=
+      commission;
+
+    /*
+    -----------------------------------------------
+    NEGATIVE EVENT
+    -----------------------------------------------
+    */
+
+    if (
+      t.progress === 39
+    ) {
 
       const options = [
         5000,
@@ -677,49 +1966,99 @@ async function api(req, res, url) {
           )
         ];
 
-    t.balance -= negative;
-t.negativeAmount = negative;
-t.depositRequired = negative;
-t.depositApproved = false;
-t.status = "waiting_admin";
+      t.balance -=
+        negative;
+
+      t.negativeAmount =
+        negative;
+
+      t.depositRequired =
+        negative;
+
+      t.totalNegative =
+        money(
+          t.totalNegative
+        ) +
+        negative;
+
+      t.depositApproved =
+        false;
+
+      t.status =
+        "waiting_admin";
     }
 
-    // Complete at 40/40.
-    if (t.progress === 40) {
+    /*
+    -----------------------------------------------
+    COMPLETE AT 40/40
+    -----------------------------------------------
+    */
 
-      t.status = "completed";
+    if (
+      t.progress === 40
+    ) {
+
+      t.status =
+        "completed";
+
       t.completedCycles++;
     }
 
     writeDB(db);
 
     return json(res, 200, {
+
       message:
-        t.status === "waiting_admin"
-          ? "Optimization paused. Please contact the administrator."
+
+        t.status ===
+        "waiting_admin"
+
+          ? "Optimization paused. Please contact Admin/Agent Support for negative clearance."
+
           : t.progress === 40
+
             ? "Optimization completed 40/40."
+
             : "Optimization successful.",
 
-      training: t
+      training:
+        t,
+
+      currency:
+        "UGX"
     });
-	  }
-  // ADMIN: VIEW TRAINEES
+		  }  /*
+  =====================================================
+  ADMIN: VIEW TRAINING TRAINEES
+  =====================================================
+  */
+
   if (
     req.method === "GET" &&
-    url.pathname === "/api/training/admin-trainees"
+    url.pathname ===
+      "/api/training/admin-trainees"
   ) {
 
     const adminEmail =
       String(
-        url.searchParams.get("adminEmail") || ""
+        url.searchParams.get(
+          "adminEmail"
+        ) || ""
       ).toLowerCase();
 
-    const admin = db.users.find(
-      u =>
-        u.email.toLowerCase() === adminEmail &&
-        u.role === "admin"
-    );
+    const adminPassword =
+      String(
+        url.searchParams.get(
+          "adminPassword"
+        ) || ""
+      );
+
+    const admin =
+      isAdmin(
+        db,
+        adminEmail,
+        adminPassword
+      );
 
     if (!admin) {
       return json(res, 403, {
@@ -728,31 +2067,88 @@ t.status = "waiting_admin";
       });
     }
 
+    const trainees =
+      db.trainingUsers.map(
+        t => {
+
+          const user =
+            findUser(
+              db,
+              t.userId
+            );
+
+          return {
+            ...t,
+
+            name:
+              user
+                ? user.name
+                : "Unknown",
+
+            email:
+              user
+                ? user.email
+                : "",
+
+            role:
+              user
+                ? user.role
+                : ""
+          };
+        }
+      );
+
     return json(res, 200, {
-      trainees: db.trainingUsers
+      trainees
     });
   }
 
-  // ADMIN: CLEAR NEGATIVE DEMO EVENT
+  /*
+  =====================================================
+  ADMIN: CLEAR TRAINING NEGATIVE
+  =====================================================
+  */
+
   if (
     req.method === "POST" &&
-    url.pathname === "/api/training/admin-clear"
+    url.pathname ===
+      "/api/training/admin-clear"
   ) {
 
-    const b = await body(req);
+    const b =
+      await body(req);
+
+    const admin =
+      isAdmin(
+        db,
+        b.adminEmail,
+        b.adminPassword
+      );
+
+    if (!admin) {
+      return json(res, 403, {
+        error:
+          "Administrator authorization required"
+      });
+    }
 
     const userId =
-      String(b.userId || "");
+      String(
+        b.userId || ""
+      );
 
     if (!userId) {
       return json(res, 400, {
-        error: "userId is required"
+        error:
+          "userId is required"
       });
     }
 
     const t =
       db.trainingUsers.find(
-        x => x.userId === userId
+        x =>
+          x.userId ===
+          userId
       );
 
     if (!t) {
@@ -762,19 +2158,24 @@ t.status = "waiting_admin";
       });
     }
 
-    if (t.status !== "waiting_admin") {
+    if (
+      t.status !==
+      "waiting_admin"
+    ) {
       return json(res, 400, {
         error:
-          "No admin action is currently required"
+          "No negative clearance is currently required"
       });
     }
 
     const required =
-      Number(t.depositRequired || 0);
+      money(
+        t.depositRequired
+      );
 
     const maxDeposit =
-      Number(
-        db.training.maxDeposit || 30000
+      money(
+        db.training.maxDeposit
       );
 
     if (
@@ -788,56 +2189,107 @@ t.status = "waiting_admin";
     }
 
     /*
-      DEMO ONLY.
-      The administrator clears the simulated
-      negative event.  real payment is processed.
+    =================================================
+    DEMO TRAINING CLEARANCE
+    =================================================
+
+    This does NOT move real money.
+
+    The administrator is only clearing the
+    simulated training negative so the trainee
+    can continue the demonstration.
     */
 
-    /*
-  DEMO ONLY.
-  Preserve accumulated commission and all
-  simulated negative events.
-*/
+    t.depositApproved =
+      true;
 
-t.depositApproved = true;
-t.depositRequired = 0;
-t.negativeAmount = 0;
+    t.depositRequired =
+      0;
 
-t.balance =
-  Number(t.commission || 0) -
-  Number(t.totalNegative || 0);
+    t.negativeAmount =
+      0;
 
-t.status = "active";
+    t.balance =
+      money(
+        t.commission
+      ) -
+      money(
+        t.totalNegative
+      );
+
+    t.status =
+      "active";
+
+    t.adminClearedAt =
+      new Date()
+        .toISOString();
+
+    t.adminClearedBy =
+      admin.id;
 
     writeDB(db);
 
     return json(res, 200, {
+
       message:
-        "Demo negative event cleared by administrator.",
-      training: t
+        "Demo negative cleared by administrator.",
+
+      training:
+        t,
+
+      currency:
+        "UGX"
     });
   }
 
-  // START NEW TRAINING CYCLE
+  /*
+  =====================================================
+  START NEW TRAINING CYCLE
+  =====================================================
+  */
+
   if (
     req.method === "POST" &&
-    url.pathname === "/api/training/new-cycle"
+    url.pathname ===
+      "/api/training/new-cycle"
   ) {
 
-    const b = await body(req);
+    const b =
+      await body(req);
+
+    const adminEmail =
+      String(
+        b.adminEmail || ""
+      );
+
+    const adminPassword =
+      String(
+        b.adminPassword || ""
+      );
+
+    /*
+    The trainee can request a new cycle,
+    but the account itself must already have
+    completed the previous cycle.
+    */
 
     const userId =
-      String(b.userId || "");
+      String(
+        b.userId || ""
+      );
 
     if (!userId) {
       return json(res, 400, {
-        error: "userId is required"
+        error:
+          "userId is required"
       });
     }
 
     const t =
       db.trainingUsers.find(
-        x => x.userId === userId
+        x =>
+          x.userId ===
+          userId
       );
 
     if (!t) {
@@ -847,7 +2299,10 @@ t.status = "active";
       });
     }
 
-    if (t.status !== "completed") {
+    if (
+      t.status !==
+      "completed"
+    ) {
       return json(res, 400, {
         error:
           "The current cycle has not been completed."
@@ -855,123 +2310,202 @@ t.status = "active";
     }
 
     t.cycle++;
-    t.balance = 0;
-    t.commission = 0;
-    t.progress = 0;
-    t.status = "active";
-    t.negativeAmount = 0;
-    t.depositRequired = 0;
-    t.depositApproved = false;
+
+    t.balance =
+      money(
+        db.training.startingBalance
+      );
+
+    t.commission =
+      0;
+
+    t.progress =
+      0;
+
+    t.status =
+      "active";
+
+    t.negativeAmount =
+      0;
+
+    t.depositRequired =
+      0;
+
+    t.depositApproved =
+      false;
+
+    t.totalNegative =
+      0;
 
     writeDB(db);
 
     return json(res, 200, {
+
       message:
         "New demo cycle started from UGX 0.",
-      training: t
+
+      training:
+        t,
+
+      currency:
+        "UGX"
     });
-  }
+		}  /*
+  =====================================================
+  UNKNOWN API ROUTE
+  =====================================================
+  */
 
   return json(res, 404, {
-    error: "Not found"
+    error:
+      "Not found"
   });
 }
 
 
-// SERVE WEBSITE FILES
+/*
+=========================================================
+SERVE WEBSITE FILES
+=========================================================
+*/
+
 function serve(req, res) {
 
   let file =
     req.url.split("?")[0];
 
-  if (file === "/") {
-    file = "/index.html";
+  if (
+    file === "/" ||
+    file === ""
+  ) {
+    file =
+      "/index.html";
   }
 
   const publicRoot =
-    path.join(ROOT, "public");
+    path.join(
+      ROOT,
+      "public"
+    );
 
   const fp =
     path.normalize(
-      path.join(publicRoot, file)
+      path.join(
+        publicRoot,
+        file
+      )
     );
 
   if (
-    !fp.startsWith(publicRoot)
+    !fp.startsWith(
+      publicRoot
+    )
   ) {
-    return json(res, 403, {
-      error: "Forbidden"
-    });
+    return json(
+      res,
+      403,
+      {
+        error:
+          "Forbidden"
+      }
+    );
   }
 
-  fs.readFile(fp, (err, data) => {
+  fs.readFile(
+    fp,
+    (err, data) => {
 
-    if (err) {
-      res.writeHead(404, {
-        "Content-Type":
-          "text/plain; charset=utf-8"
-      });
+      if (err) {
 
-      return res.end(
-        "Not found"
+        res.writeHead(
+          404,
+          {
+            "Content-Type":
+              "text/plain; charset=utf-8"
+          }
+        );
+
+        return res.end(
+          "Not found"
+        );
+      }
+
+      const ext =
+        path.extname(fp);
+
+      const types = {
+
+        ".html":
+          "text/html; charset=utf-8",
+
+        ".css":
+          "text/css; charset=utf-8",
+
+        ".js":
+          "application/javascript; charset=utf-8",
+
+        ".json":
+          "application/json; charset=utf-8",
+
+        ".png":
+          "image/png",
+
+        ".jpg":
+          "image/jpeg",
+
+        ".jpeg":
+          "image/jpeg",
+
+        ".svg":
+          "image/svg+xml",
+
+        ".ico":
+          "image/x-icon"
+      };
+
+      res.writeHead(
+        200,
+        {
+          "Content-Type":
+            types[ext] ||
+            "application/octet-stream"
+        }
       );
+
+      res.end(data);
     }
-
-    const ext =
-      path.extname(fp);
-
-    const types = {
-      ".html":
-        "text/html; charset=utf-8",
-
-      ".css":
-        "text/css; charset=utf-8",
-
-      ".js":
-        "application/javascript; charset=utf-8",
-
-      ".json":
-        "application/json; charset=utf-8",
-
-      ".png":
-        "image/png",
-
-      ".jpg":
-        "image/jpeg",
-
-      ".jpeg":
-        "image/jpeg",
-
-      ".svg":
-        "image/svg+xml"
-    };
-
-    res.writeHead(200, {
-      "Content-Type":
-        types[ext] ||
-        "application/octet-stream"
-    });
-
-    res.end(data);
-  });
+  );
 }
 
 
-// START SERVER
+/*
+=========================================================
+START SERVER
+=========================================================
+*/
+
 const server =
   http.createServer(
-    async (req, res) => {
+    async (
+      req,
+      res
+    ) => {
 
       try {
 
         const url =
           new URL(
             req.url,
-            `http://${req.headers.host || "localhost"}`
+            `http://${
+              req.headers.host ||
+              "localhost"
+            }`
           );
 
         if (
-          url.pathname.startsWith("/api/")
+          url.pathname.startsWith(
+            "/api/"
+          )
         ) {
 
           await api(
@@ -995,10 +2529,14 @@ const server =
           error
         );
 
-        json(res, 500, {
-          error:
-            "Server error"
-        });
+        json(
+          res,
+          500,
+          {
+            error:
+              "Server error"
+          }
+        );
       }
     }
   );
@@ -1007,8 +2545,10 @@ const server =
 server.listen(
   PORT,
   () => {
+
     console.log(
       `MyMarket Uganda running on port ${PORT}`
     );
+
   }
 );
