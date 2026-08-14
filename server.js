@@ -678,7 +678,7 @@ async function api(req, res, url) {
         ];
 
       t.balance -= negative;
-      t.negativeAmount = negative;
+      t.negativeAm count = negative;
       t.depositRequired = negative;
       t.depositApproved = false;
       t.status = "waiting_admin";
@@ -790,14 +790,24 @@ async function api(req, res, url) {
     /*
       DEMO ONLY.
       The administrator clears the simulated
-      negative event. No real payment is processed.
+      negative event.  real payment is processed.
     */
 
-    t.balance = 0;
-    t.depositApproved = true;
-    t.depositRequired = 0;
-    t.negativeAmount = 0;
-    t.status = "active";
+    /*
+  DEMO ONLY.
+  Preserve accumulated commission and all
+  simulated negative events.
+*/
+
+t.depositApproved = true;
+t.depositRequired = 0;
+t.negativeAmount = 0;
+
+t.balance =
+  Number(t.commission || 0) -
+  Number(t.totalNegative || 0);
+
+t.status = "active";
 
     writeDB(db);
 
