@@ -1316,61 +1316,101 @@ function sellerWallet(
     }
 
     if (
-      !/^07\d{8}$/.test(
-        number
-      )
+  /*
+  =====================================================
+  CREATE SELLER WITHDRAWAL
+  =====================================================
+  */
+
+  if (
+    req.method === "POST" &&
+    url.pathname === "/api/withdrawals"
+  ) {
+
+    const b = await body(req);
+
+    const sellerId =
+      String(b.sellerId || "").trim();
+
+    const amount =
+      money(b.amount);
+
+    if (!sellerId) {
+      return json(res, 400, {
+        error: "sellerId is required"
+      });
+    }
+
+    const seller =
+      findUser(db, sellerId);
+
+    if (
+      !seller ||
+      seller.role !== "seller"
+    ) {
+      return json(res, 403, {
+        error: "Seller account required"
+      });
+    }
+
+    if (
+      !Number.isFinite(amount) ||
+      amount <= 0
+    ) {
+      return json(res, 400, {
+        error: "Enter a valid withdrawal amount"
+      });
+    }
+
+    const wallet =
+      sellerWallet(db, sellerId);
+
+    if (
+      amount >
+      wallet.availableBalance
+    ) {
+      return json(res, 400, {
+        error: "Insufficient available balance",
+        availableBalance:
+          wallet.availableBalance
+      });
+    }
+
+    if (
+      !seller.mobileMoney ||
+      !seller.mobileMoney.network ||
+      !seller.mobileMoney.number
     ) {
       return json(res, 400, {
         error:
-          "Enter a valid Ugandan Mobile Money number"
+          "Please save your Mobile Money withdrawal account first"
       });
     }
 
     const withdrawal = {
-
-      id:
-        id("wd"),
-
-      sellerId:
-        sellerId,
-
-      sellerName:
-        seller.name,
-
-      shop:
-        seller.shop ||
-        "",
-
-      amount:
-        amount,
-
-      currency:
-        "UGX",
+      id: id("wd"),
+      sellerId,
+      sellerName: seller.name,
+      amount,
+      currency: "UGX",
 
       network:
-        network,
+        seller.mobileMoney.network,
 
-      mobileNumber:
-        number,
+      accountNumber:
+        seller.mobileMoney.number,
 
-      status:
-        "Pending",
+      status: "Pending",
 
-      transactionReference:
-        "",
+      providerStatus:
+        "Not processed",
 
-      requestedAt:
-        new Date()
-          .toISOString(),
+      providerReference: "",
 
-      paidAt:
-        null,
+      createdAt:
+        new Date().toISOString(),
 
-      rejectedAt:
-        null,
-
-      adminNote:
-        ""
+      paidAt: null
     };
 
     db.withdrawals.unshift(
@@ -1380,9 +1420,8 @@ function sellerWallet(
     writeDB(db);
 
     return json(res, 201, {
-
       message:
-        "Withdrawal request submitted successfully. Awaiting administrator payment.",
+        "Withdrawal request submitted successfully.",
 
       withdrawal
     });
