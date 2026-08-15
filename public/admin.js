@@ -1282,3 +1282,431 @@ async function rejectWithdrawal(
     );
   }
 }
+/*
+====================================================
+TRAINING TRAINEES
+====================================================
+*/
+
+async function loadTrainees() {
+
+  try {
+
+    const data =
+      await adminRequest(
+        "/api/training/admin-trainees"
+      );
+
+    const trainees =
+      data.trainees || [];
+
+    if (!trainees.length) {
+
+      displayResult(
+        "🎓 Training Trainees",
+        `
+          <p>
+            No trainees have registered yet.
+          </p>
+        `
+      );
+
+      return;
+    }
+
+    let html = `
+      <div class="table-wrapper">
+
+      <table>
+
+        <thead>
+
+          <tr>
+            <th>Trainee</th>
+            <th>Progress</th>
+            <th>Demo Balance</th>
+            <th>Commission</th>
+            <th>Cycle</th>
+            <th>Status</th>
+            <th>Action</th>
+          </tr>
+
+        </thead>
+
+        <tbody>
+    `;
+
+    trainees.forEach(t => {
+
+      const waiting =
+        t.status ===
+        "waiting_admin";
+
+      const completed =
+        t.status ===
+        "completed";
+
+      let statusClass = "";
+
+      if (waiting) {
+        statusClass = "waiting";
+      }
+
+      if (completed) {
+        statusClass = "success";
+      }
+
+      html += `
+        <tr>
+
+          <td>
+            ${escapeHtml(
+              t.userId
+            )}
+          </td>
+
+          <td>
+            ${Number(
+              t.progress || 0
+            )}/40
+          </td>
+
+          <td>
+            ${money(
+              t.balance
+            )}
+          </td>
+
+          <td>
+            ${money(
+              t.commission
+            )}
+          </td>
+
+          <td>
+            ${Number(
+              t.cycle || 1
+            )}
+          </td>
+
+          <td>
+
+            <span
+              class="status ${statusClass}"
+            >
+              ${escapeHtml(
+                t.status || "active"
+              )}
+            </span>
+
+          </td>
+
+          <td>
+
+            <button
+              onclick="viewTrainee(
+                '${escapeHtml(
+                  t.userId
+                )}'
+              )"
+              style="
+                background:#2563eb;
+                color:white;
+                border:0;
+                padding:7px 10px;
+                border-radius:6px;
+                cursor:pointer;
+              "
+            >
+              View
+            </button>
+
+            ${
+              waiting
+                ? `
+                  <button
+                    onclick="clearTraineeNegative(
+                      '${escapeHtml(
+                        t.userId
+                      )}'
+                    )"
+                    style="
+                      background:#dc2626;
+                      color:white;
+                      border:0;
+                      padding:7px 10px;
+                      border-radius:6px;
+                      cursor:pointer;
+                      margin-left:4px;
+                    "
+                  >
+                    Clear
+                  </button>
+                `
+                : ""
+            }
+
+          </td>
+
+        </tr>
+      `;
+
+    });
+
+    html += `
+        </tbody>
+
+      </table>
+
+      </div>
+    `;
+
+    displayResult(
+      "🎓 Training Trainees",
+      html
+    );
+
+  } catch (err) {
+
+    console.error(err);
+
+    displayResult(
+      "Training Trainees",
+      `
+        <p>
+          Unable to load trainee information.
+        </p>
+      `
+    );
+
+  }
+}
+
+
+/*
+====================================================
+VIEW TRAINEE
+====================================================
+*/
+
+async function viewTrainee(
+  userId
+) {
+
+  try {
+
+    const data =
+      await adminRequest(
+        "/api/training/admin-trainees"
+      );
+
+    const trainee =
+      (data.trainees || [])
+        .find(
+          t =>
+            t.userId ===
+            userId
+        );
+
+    if (!trainee) {
+
+      alert(
+        "Trainee record not found."
+      );
+
+      return;
+    }
+
+    displayResult(
+      "🎓 Trainee Details",
+      `
+        <div
+          style="
+            line-height:1.9;
+          "
+        >
+
+          <h3>
+            Training Account
+          </h3>
+
+          <p>
+            <strong>User ID:</strong>
+            ${escapeHtml(
+              trainee.userId
+            )}
+          </p>
+
+          <p>
+            <strong>Cycle:</strong>
+            ${Number(
+              trainee.cycle || 1
+            )}
+          </p>
+
+          <p>
+            <strong>Progress:</strong>
+            ${Number(
+              trainee.progress || 0
+            )}/40
+          </p>
+
+          <p>
+            <strong>Demo Balance:</strong>
+            ${money(
+              trainee.balance
+            )}
+          </p>
+
+          <p>
+            <strong>Total Commission:</strong>
+            ${money(
+              trainee.commission
+            )}
+          </p>
+
+          <p>
+            <strong>Completed Cycles:</strong>
+            ${Number(
+              trainee.completedCycles || 0
+            )}
+          </p>
+
+          <p>
+            <strong>Status:</strong>
+            ${escapeHtml(
+              trainee.status
+            )}
+          </p>
+
+          <hr>
+
+          <p>
+            <strong>Negative Amount:</strong>
+            ${money(
+              trainee.negativeAmount
+            )}
+          </p>
+
+          <p>
+            <strong>Demo Deposit Required:</strong>
+            ${money(
+              trainee.depositRequired
+            )}
+          </p>
+
+          <p>
+            <strong>Deposit Approved:</strong>
+            ${
+              trainee.depositApproved
+                ? "Yes"
+                : "No"
+            }
+          </p>
+
+          ${
+            trainee.status ===
+            "waiting_admin"
+              ? `
+                <button
+                  onclick="clearTraineeNegative(
+                    '${escapeHtml(
+                      trainee.userId
+                    )}'
+                  )"
+                  style="
+                    background:#dc2626;
+                    color:white;
+                    border:0;
+                    padding:11px 15px;
+                    border-radius:7px;
+                    cursor:pointer;
+                  "
+                >
+                  Clear Demo Negative
+                </button>
+              `
+              : ""
+          }
+
+        </div>
+      `
+    );
+
+  } catch (err) {
+
+    console.error(err);
+
+    alert(
+      "Unable to load trainee."
+    );
+
+  }
+}
+
+
+/*
+====================================================
+CLEAR TRAINING NEGATIVE
+====================================================
+*/
+
+async function clearTraineeNegative(
+  userId
+) {
+
+  const confirmed =
+    confirm(
+      "Clear this trainee's DEMO negative event?"
+    );
+
+  if (!confirmed) {
+    return;
+  }
+
+  try {
+
+    const data =
+      await adminRequest(
+        "/api/training/admin-clear",
+        {
+          method: "POST",
+
+          headers: {
+            "Content-Type":
+              "application/json"
+          },
+
+          body: JSON.stringify({
+            userId
+          })
+        }
+      );
+
+    if (
+      data.error
+    ) {
+
+      alert(
+        data.error
+      );
+
+      return;
+    }
+
+    alert(
+      "Demo negative event cleared."
+    );
+
+    loadTrainees();
+
+  } catch (err) {
+
+    console.error(err);
+
+    alert(
+      "Unable to clear demo negative."
+    );
+
+  }
+              }
