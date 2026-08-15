@@ -1322,24 +1322,14 @@ function sellerWallet(
   =====================================================
   */
 
-  if (
-    req.method === "POST" &&
-    url.pathname === "/api/withdrawals"
-  ) {
+  const sellerId = String(b.sellerId || "");
+const amount = money(b.amount);
 
-    const b = await body(req);
-
-    const sellerId =
-      String(b.sellerId || "").trim();
-
-    const amount =
-      money(b.amount);
-
-    if (!sellerId) {
-      return json(res, 400, {
-        error: "sellerId is required"
-      });
-    }
+if (!sellerId) {
+  return json(res, 400, {
+    error: "sellerId is required"
+  });
+}
 
     const seller =
       findUser(db, sellerId);
