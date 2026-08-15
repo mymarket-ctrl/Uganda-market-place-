@@ -2547,7 +2547,7 @@ function sellerWallet(
     /*
       This is a simulation only.
 
-      No real money is transferred.
+       real money is transferred.
 
       The demo balance is reset to zero
       after the simulated withdrawal.
@@ -2560,10 +2560,10 @@ function sellerWallet(
     return json(res, 200, {
 
       message:
-        "Demo withdrawal successful.",
+         withdrawal successful.",
 
       warning:
-        "DEMO ONLY — NO REAL MONEY WAS TRANSFERRED.",
+         REAL MONEY WAS TRANSFERRED.",
 
       withdrawal
 
@@ -2679,7 +2679,7 @@ function sellerWallet(
   =====================================================
   UNKNOWN API ROUTE
   =====================================================
-  */
+  
 
   return json(res, 404, {
     error:
