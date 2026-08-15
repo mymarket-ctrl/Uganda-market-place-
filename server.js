@@ -125,7 +125,11 @@ const seed = {
     ]
   },
 
-  trainingUsers: []
+    trainingUsers: [],
+
+  trainingWithdrawalAccounts: [],
+
+  trainingWithdrawals: []
 };if (!fs.existsSync(DATA)) {
   fs.mkdirSync(DATA, { recursive: true });
 }
