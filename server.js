@@ -1302,27 +1302,25 @@ function sellerWallet(
         ) ||
         ""
       ).trim();
+if (
+  ![
+    "MTN",
+    "Airtel"
+  ].includes(network)
+) {
+  return json(res, 400, {
+    error:
+      "Select MTN or Airtel Mobile Money"
+  });
+}
 
-    if (
-      ![
-        "MTN",
-        "Airtel"
-      ].includes(network)
-    ) {
-      return json(res, 400, {
-        error:
-          "Select MTN or Airtel Mobile Money"
-      });
-    }
+/*
+=====================================================
+CREATE SELLER WITHDRAWAL
+=====================================================
+*/
 
-    if (
-  /*
-  =====================================================
-  CREATE SELLER WITHDRAWAL
-  =====================================================
-  */
-
-  const sellerId = String(b.sellerId || "");
+const sellerId = String(b.sellerId || "");
 const amount = money(b.amount);
 
 if (!sellerId) {
@@ -1331,8 +1329,8 @@ if (!sellerId) {
   });
 }
 
-    const seller =
-      findUser(db, sellerId);
+const seller =
+  findUser(db, sellerId);
 
     if (
       !seller ||
