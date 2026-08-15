@@ -736,3 +736,549 @@ function formatDate(value) {
 
   }
     }
+/*
+====================================================
+SELLER WITHDRAWALS
+====================================================
+*/
+
+async function loadWithdrawals() {
+
+  try {
+
+    const data =
+      await adminRequest(
+        "/api/admin/withdrawals"
+      );
+
+    const withdrawals =
+      data.withdrawals || [];
+
+    if (!withdrawals.length) {
+
+      displayResult(
+        "💰 Seller Withdrawals",
+        `
+          <p>
+            No seller withdrawal requests yet.
+          </p>
+        `
+      );
+
+      return;
+    }
+
+    let html = `
+      <div class="table-wrapper">
+
+      <table>
+
+        <thead>
+
+          <tr>
+            <th>Seller</th>
+            <th>Shop</th>
+            <th>Amount</th>
+            <th>Network</th>
+            <th>Mobile Number</th>
+            <th>Status</th>
+            <th>Action</th>
+          </tr>
+
+        </thead>
+
+        <tbody>
+    `;
+
+    withdrawals.forEach(
+      withdrawal => {
+
+        let action = "";
+
+        if (
+          withdrawal.status ===
+          "Pending"
+        ) {
+
+          action = `
+            <button
+              onclick="openWithdrawal(
+                '${escapeHtml(
+                  withdrawal.id
+                )}'
+              )"
+              style="
+                background:#059669;
+                color:white;
+                border:0;
+                padding:7px 10px;
+                border-radius:6px;
+                cursor:pointer;
+              "
+            >
+              Process
+            </button>
+          `;
+
+        } else {
+
+          action = `
+            <span>
+              Processed
+            </span>
+          `;
+        }
+
+        html += `
+          <tr>
+
+            <td>
+              ${escapeHtml(
+                withdrawal.sellerName
+              )}
+            </td>
+
+            <td>
+              ${escapeHtml(
+                withdrawal.shop || "-"
+              )}
+            </td>
+
+            <td>
+              ${money(
+                withdrawal.amount
+              )}
+            </td>
+
+            <td>
+              ${escapeHtml(
+                withdrawal.network
+              )}
+            </td>
+
+            <td>
+              ${escapeHtml(
+                withdrawal.mobileNumber
+              )}
+            </td>
+
+            <td>
+
+              <span class="status">
+
+                ${escapeHtml(
+                  withdrawal.status
+                )}
+
+              </span>
+
+            </td>
+
+            <td>
+              ${action}
+            </td>
+
+          </tr>
+        `;
+      }
+    );
+
+    html += `
+        </tbody>
+
+      </table>
+
+      </div>
+    `;
+
+    displayResult(
+      "💰 Seller Withdrawals",
+      html
+    );
+
+  } catch (err) {
+
+    console.error(err);
+
+    displayResult(
+      "Seller Withdrawals",
+      `
+        <p>
+          Unable to load withdrawal requests.
+        </p>
+      `
+    );
+  }
+}
+
+
+/*
+====================================================
+OPEN WITHDRAWAL
+====================================================
+*/
+
+async function openWithdrawal(
+  withdrawalId
+) {
+
+  try {
+
+    const data =
+      await adminRequest(
+        "/api/admin/withdrawals"
+      );
+
+    const withdrawal =
+      (data.withdrawals || [])
+        .find(
+          w =>
+            w.id ===
+            withdrawalId
+        );
+
+    if (!withdrawal) {
+
+      alert(
+        "Withdrawal not found."
+      );
+
+      return;
+    }
+
+    displayResult(
+      "💰 Process Seller Withdrawal",
+      `
+        <div
+          style="
+            line-height:1.8;
+          "
+        >
+
+          <p>
+            <strong>Seller:</strong>
+            ${escapeHtml(
+              withdrawal.sellerName
+            )}
+          </p>
+
+          <p>
+            <strong>Shop:</strong>
+            ${escapeHtml(
+              withdrawal.shop || "-"
+            )}
+          </p>
+
+          <p>
+            <strong>Amount:</strong>
+            ${money(
+              withdrawal.amount
+            )}
+          </p>
+
+          <p>
+            <strong>Network:</strong>
+            ${escapeHtml(
+              withdrawal.network
+            )}
+          </p>
+
+          <p>
+            <strong>Mobile Money:</strong>
+            ${escapeHtml(
+              withdrawal.mobileNumber
+            )}
+          </p>
+
+          <p>
+            <strong>Requested:</strong>
+            ${formatDate(
+              withdrawal.requestedAt
+            )}
+          </p>
+
+          <hr>
+
+          <label>
+            Mobile Money Transaction Reference
+          </label>
+
+          <input
+            id="withdrawReference"
+            type="text"
+            placeholder="Enter transaction reference"
+            style="
+              width:100%;
+              box-sizing:border-box;
+              padding:10px;
+              margin:7px 0 12px;
+              border:1px solid #ddd;
+              border-radius:7px;
+            "
+          >
+
+          <label>
+            Admin Note
+          </label>
+
+          <textarea
+            id="withdrawNote"
+            placeholder="Optional note"
+            style="
+              width:100%;
+              box-sizing:border-box;
+              min-height:80px;
+              padding:10px;
+              margin:7px 0 12px;
+              border:1px solid #ddd;
+              border-radius:7px;
+            "
+          ></textarea>
+
+          <button
+            onclick="markWithdrawalPaid(
+              '${escapeHtml(
+                withdrawal.id
+              )}'
+            )"
+            style="
+              background:#059669;
+              color:white;
+              border:0;
+              padding:11px 15px;
+              border-radius:7px;
+              cursor:pointer;
+              margin-right:8px;
+            "
+          >
+            ✓ Mark Paid
+          </button>
+
+          <button
+            onclick="rejectWithdrawal(
+              '${escapeHtml(
+                withdrawal.id
+              )}'
+            )"
+            style="
+              background:#dc2626;
+              color:white;
+              border:0;
+              padding:11px 15px;
+              border-radius:7px;
+              cursor:pointer;
+            "
+          >
+            Reject
+          </button>
+
+        </div>
+      `
+    );
+
+  } catch (err) {
+
+    console.error(err);
+
+    alert(
+      "Unable to open withdrawal."
+    );
+  }
+}
+
+
+/*
+====================================================
+MARK WITHDRAWAL AS PAID
+====================================================
+*/
+
+async function markWithdrawalPaid(
+  withdrawalId
+) {
+
+  const reference =
+    document
+      .getElementById(
+        "withdrawReference"
+      )
+      .value
+      .trim();
+
+  const note =
+    document
+      .getElementById(
+        "withdrawNote"
+      )
+      .value
+      .trim();
+
+  if (!reference) {
+
+    alert(
+      "Enter the Mobile Money transaction reference."
+    );
+
+    return;
+  }
+
+  const confirmed =
+    confirm(
+      "Confirm that the seller has actually been paid?"
+    );
+
+  if (!confirmed) {
+    return;
+  }
+
+  try {
+
+    const data =
+      await adminRequest(
+        "/api/withdrawals/" +
+        encodeURIComponent(
+          withdrawalId
+        ),
+        {
+          method: "PUT",
+
+          headers: {
+            "Content-Type":
+              "application/json"
+          },
+
+          body: JSON.stringify({
+
+            status:
+              "Paid",
+
+            transactionReference:
+              reference,
+
+            adminNote:
+              note,
+
+            adminEmail:
+              adminEmail,
+
+            adminPassword:
+              adminPassword
+          })
+        }
+      );
+
+    if (
+      data.error
+    ) {
+
+      alert(
+        data.error
+      );
+
+      return;
+    }
+
+    alert(
+      "Withdrawal marked as paid."
+    );
+
+    loadWithdrawals();
+
+  } catch (err) {
+
+    console.error(err);
+
+    alert(
+      "Unable to process withdrawal."
+    );
+  }
+}
+
+
+/*
+====================================================
+REJECT WITHDRAWAL
+====================================================
+*/
+
+async function rejectWithdrawal(
+  withdrawalId
+) {
+
+  const note =
+    document
+      .getElementById(
+        "withdrawNote"
+      )
+      .value
+      .trim();
+
+  const confirmed =
+    confirm(
+      "Reject this withdrawal request?"
+    );
+
+  if (!confirmed) {
+    return;
+  }
+
+  try {
+
+    const data =
+      await adminRequest(
+        "/api/withdrawals/" +
+        encodeURIComponent(
+          withdrawalId
+        ),
+        {
+          method: "PUT",
+
+          headers: {
+            "Content-Type":
+              "application/json"
+          },
+
+          body: JSON.stringify({
+
+            status:
+              "Rejected",
+
+            adminNote:
+              note ||
+              "Withdrawal rejected",
+
+            adminEmail:
+              adminEmail,
+
+            adminPassword:
+              adminPassword
+          })
+        }
+      );
+
+    if (
+      data.error
+    ) {
+
+      alert(
+        data.error
+      );
+
+      return;
+    }
+
+    alert(
+      "Withdrawal rejected."
+    );
+
+    loadWithdrawals();
+
+  } catch (err) {
+
+    console.error(err);
+
+    alert(
+      "Unable to reject withdrawal."
+    );
+  }
+}
