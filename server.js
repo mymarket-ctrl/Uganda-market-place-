@@ -2555,19 +2555,19 @@ function sellerWallet(
 
     training.balance = 0;
 
-    writeDB(db);
+writeDB(db);
 
-    return json(res, 200, {
+return json(res, 200, {
 
-      message:
-         withdrawal successful.",
+  message:
+    "Demo withdrawal successful.",
 
-      warning:
-         REAL MONEY WAS TRANSFERRED.",
+  warning:
+    "DEMO  —  REAL MONEY WAS TRANSFERRED.",
 
-      withdrawal
+  withdrawal
 
-    });
+});
 
   }
  // ====================================================
