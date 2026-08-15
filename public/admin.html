@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
+
+  <title>MyMarket Admin Office</title>
+
+  <link
+    rel="stylesheet"
+    href="styles.css"
+  >
+
+  <style>
+
+    body {
+      margin: 0;
+      background: #f5f7fb;
+      font-family: Arial, sans-serif;
+    }
+
+    .admin-header {
+      background: #111827;
+      color: white;
+      padding: 18px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 15px;
+    }
+
+    .admin-header h1 {
+      margin: 0;
+      font-size: 21px;
+    }
+
+    .admin-header small {
+      display: block;
+      margin-top: 5px;
+      opacity: .7;
+    }
+
+    .logout-btn {
+      background: #dc2626;
+      color: white;
+      border: 0;
+      padding: 10px 15px;
+      border-radius: 7px;
+      cursor: pointer;
+    }
+
+    .admin-container {
+      max-width: 1200px;
+      margin: auto;
+      padding: 20px;
+    }
+
+    .admin-login {
+      max-width: 420px;
+      margin: 70px auto;
+      background: white;
+      padding: 25px;
+      border-radius: 12px;
+      box-shadow: 0 3px 15px rgba(0,0,0,.08);
+    }
+
+    .admin-login h2 {
+      margin-top: 0;
+    }
+
+    .admin-login input {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 12px;
+      margin: 7px 0;
+      border: 1px solid #ddd;
+      border-radius: 7px;
+    }
+
+    .admin-login button {
+      width: 100%;
+      padding: 12px;
+      margin-top: 10px;
+      border: 0;
+      border-radius: 7px;
+      background: #111827;
+      color: white;
+      cursor: pointer;
+    }
+
+    .error-message {
+      color: #dc2626;
+      margin-top: 10px;
+    }
+
+    .dashboard {
+      display: none;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns:
+        repeat(
+          auto-fit,
+          minmax(180px, 1fr)
+        );
+
+      gap: 15px;
+      margin-bottom: 25px;
+    }
+
+    .stat-card {
+      background: white;
+      padding: 18px;
+      border-radius: 12px;
+      box-shadow: 0 2px 10px rgba(0,0,0,.06);
+    }
+
+    .stat-card h3 {
+      margin: 0;
+      color: #6b7280;
+      font-size: 14px;
+    }
+
+    .stat-card strong {
+      display: block;
+      margin-top: 8px;
+      font-size: 24px;
+    }
+
+    .admin-section {
+      background: white;
+      padding: 20px;
+      margin-bottom: 20px;
+      border-radius: 12px;
+      box-shadow: 0 2px 10px rgba(0,0,0,.06);
+    }
+
+    .admin-section h2 {
+      margin-top: 0;
+    }
+
+    .admin-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .admin-actions button {
+      border: 0;
+      padding: 11px 15px;
+      border-radius: 7px;
+      cursor: pointer;
+      background: #2563eb;
+      color: white;
+    }
+
+    .admin-actions button.training {
+      background: #7c3aed;
+    }
+
+    .admin-actions button.money {
+      background: #059669;
+    }
+
+    .admin-actions button.danger {
+      background: #dc2626;
+    }
+
+    .table-wrapper {
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 650px;
+    }
+
+    th,
+    td {
+      text-align: left;
+      padding: 11px;
+      border-bottom: 1px solid #eee;
+    }
+
+    th {
+      background: #f9fafb;
+    }
+
+    .status {
+      display: inline-block;
+      padding: 5px 9px;
+      border-radius: 20px;
+      font-size: 12px;
+      background: #e5e7eb;
+    }
+
+    .status.pending {
+      background: #fef3c7;
+    }
+
+    .status.success {
+      background: #d1fae5;
+    }
+
+    .status.waiting {
+      background: #fee2e2;
+    }
+
+    .demo-warning {
+      background: #fff7ed;
+      border: 1px solid #fed7aa;
+      color: #9a3412;
+      padding: 15px;
+      border-radius: 8px;
+      margin-top: 15px;
+    }
+
+    @media (
+      max-width: 600px
+    ) {
+
+      .admin-header {
+        align-items: flex-start;
+      }
+
+      .admin-container {
+        padding: 12px;
+      }
+
+      .admin-section {
+        padding: 15px;
+      }
+
+    }
+
+  </style>
+
+</head>
+
+<body>
+
+  <!-- ADMIN LOGIN -->
+
+  <div
+    id="adminLogin"
+    class="admin-login"
+  >
+
+    <h2>
+      🔐 MyMarket Admin Office
+    </h2>
+
+    <p>
+      Administrator access only.
+    </p>
+
+    <input
+      id="adminEmail"
+      type="email"
+      placeholder="Administrator email"
+    >
+
+    <input
+      id="adminPassword"
+      type="password"
+      placeholder="Password"
+    >
+
+    <button
+      onclick="adminLogin()"
+    >
+      Login
+    </button>
+
+    <div
+      id="loginError"
+      class="error-message"
+    ></div>
+
+  </div>
+
+
+  <!-- ADMIN DASHBOARD -->
+
+  <div
+    id="dashboard"
+    class="dashboard"
+  >
+
+    <header
+      class="admin-header"
+    >
+
+      <div>
+
+        <h1>
+          MyMarket Admin Office
+        </h1>
+
+        <small>
+          Administrator Control Panel
+        </small>
+
+      </div>
+
+      <button
+        class="logout-btn"
+        onclick="adminLogout()"
+      >
+        Logout
+      </button>
+
+    </header>
+
+
+    <main
+      class="admin-container"
+    >
+
+      <!-- STATISTICS -->
+
+      <section
+        class="stats-grid"
+      >
+
+        <div class="stat-card">
+          <h3>Customers</h3>
+          <strong id="customersCount">
+            0
+          </strong>
+        </div>
+
+        <div class="stat-card">
+          <h3>Sellers</h3>
+          <strong id="sellersCount">
+            0
+          </strong>
+        </div>
+
+        <div class="stat-card">
+          <h3>Products</h3>
+          <strong id="productsCount">
+            0
+          </strong>
+        </div>
+
+        <div class="stat-card">
+          <h3>Orders</h3>
+          <strong id="ordersCount">
+            0
+          </strong>
+        </div>
+
+        <div class="stat-card">
+          <h3>Total Sales</h3>
+          <strong id="revenueCount">
+            UGX 0
+          </strong>
+        </div>
+
+      </section>
+
+
+      <!-- MARKETPLACE -->
+
+      <section
+        class="admin-section"
+      >
+
+        <h2>
+          🛒 Marketplace
+        </h2>
+
+        <div
+          class="admin-actions"
+        >
+
+          <button
+            onclick="loadOrders()"
+          >
+            Orders
+          </button>
+
+          <button
+            onclick="loadProducts()"
+          >
+            Products
+          </button>
+
+          <button
+            onclick="loadSellers()"
+          >
+            Sellers
+          </button>
+
+          <button
+            onclick="loadCustomers()"
+          >
+            Customers
+          </button>
+
+        </div>
+
+      </section>
+
+
+      <!-- PAYMENTS -->
+
+      <section
+        class="admin-section"
+      >
+
+        <h2>
+          💰 Payments & Withdrawals
+        </h2>
+
+        <div
+          class="admin-actions"
+        >
+
+          <button
+            class="money"
+            onclick="loadWithdrawals()"
+          >
+            Seller Withdrawals
+          </button>
+
+          <button
+            class="money"
+            onclick="loadPayments()"
+          >
+            Customer Payments
+          </button>
+
+        </div>
+
+      </section>
+
+
+      <!-- TRAINING -->
+
+      <section
+        class="admin-section"
+      >
+
+        <h2>
+          🎓 Training
+        </h2>
+
+        <div
+          class="admin-actions"
+        >
+
+          <button
+            class="training"
+            onclick="loadTrainees()"
+          >
+            View Trainees
+          </button>
+
+          <button
+            class="training"
+            onclick="loadTrainingWithdrawals()"
+          >
+            Demo Withdrawals
+          </button>
+
+          <button
+            class="training"
+            onclick="loadTrainingSettings()"
+          >
+            Training Settings
+          </button>
+
+        </div>
+
+        <div
+          class="demo-warning"
+        >
+
+          ⚠️
+          <strong>
+            Training system is DEMO ONLY.
+          </strong>
+
+          No real money is transferred
+          through training withdrawals.
+
+        </div>
+
+      </section>
+
+
+      <!-- RESULTS -->
+
+      <section
+        class="admin-section"
+      >
+
+        <h2
+          id="resultsTitle"
+        >
+          Admin Information
+        </h2>
+
+        <div
+          id="results"
+        >
+          Select an option above.
+        </div>
+
+      </section>
+
+    </main>
+
+  </div>
+
+
+  <script src="admin.js"></script>
+
+</body>
+
+  </html>
