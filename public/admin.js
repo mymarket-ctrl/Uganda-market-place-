@@ -1710,3 +1710,319 @@ async function clearTraineeNegative(
 
   }
               }
+/*
+====================================================
+TRAINING DEMO WITHDRAWALS
+====================================================
+*/
+
+async function loadTrainingWithdrawals() {
+
+  try {
+
+    const data =
+      await adminRequest(
+        "/api/training/admin-withdrawals"
+      );
+
+    const withdrawals =
+      data.withdrawals || [];
+
+    if (!withdrawals.length) {
+
+      displayResult(
+        "💳 Training Demo Withdrawals",
+        `
+          <p>
+            No demo withdrawals have been
+            submitted yet.
+          </p>
+
+          <div class="demo-warning">
+            ⚠️
+            <strong>DEMO ONLY</strong><br>
+            No real money is transferred
+            through training withdrawals.
+          </div>
+        `
+      );
+
+      return;
+    }
+
+    let html = `
+
+      <div class="demo-warning">
+
+        ⚠️
+        <strong>TRAINING DEMONSTRATION ONLY</strong><br>
+
+        These withdrawals do not transfer
+        real money.
+
+      </div>
+
+      <br>
+
+      <div class="table-wrapper">
+
+      <table>
+
+        <thead>
+
+          <tr>
+            <th>Trainee</th>
+            <th>Amount</th>
+            <th>Currency</th>
+            <th>Payment Method</th>
+            <th>Destination</th>
+            <th>Status</th>
+            <th>Date</th>
+          </tr>
+
+        </thead>
+
+        <tbody>
+    `;
+
+    withdrawals.forEach(
+      withdrawal => {
+
+        html += `
+
+          <tr>
+
+            <td>
+              ${escapeHtml(
+                withdrawal.traineeName ||
+                withdrawal.userId ||
+                "-"
+              )}
+            </td>
+
+            <td>
+              ${escapeHtml(
+                withdrawal.currency ||
+                "UGX"
+              )}
+              ${Number(
+                withdrawal.amount || 0
+              ).toLocaleString()}
+            </td>
+
+            <td>
+              ${escapeHtml(
+                withdrawal.currency ||
+                "UGX"
+              )}
+            </td>
+
+            <td>
+              ${escapeHtml(
+                withdrawal.method ||
+                "-"
+              )}
+            </td>
+
+            <td>
+              ${escapeHtml(
+                withdrawal.destination ||
+                "-"
+              )}
+            </td>
+
+            <td>
+
+              <span class="status success">
+
+                ${escapeHtml(
+                  withdrawal.status ||
+                  "DEMO SUCCESSFUL"
+                )}
+
+              </span>
+
+            </td>
+
+            <td>
+              ${formatDate(
+                withdrawal.createdAt
+              )}
+            </td>
+
+          </tr>
+
+        `;
+
+      }
+    );
+
+    html += `
+
+        </tbody>
+
+      </table>
+
+      </div>
+
+    `;
+
+    displayResult(
+      "💳 Training Demo Withdrawals",
+      html
+    );
+
+  } catch (err) {
+
+    console.error(err);
+
+    displayResult(
+      "Training Demo Withdrawals",
+      `
+        <p>
+          The training withdrawal
+          endpoint is not connected yet.
+        </p>
+
+        <div class="demo-warning">
+
+          ⚠️
+          The training withdrawal system
+          will remain simulation-only.
+
+        </div>
+      `
+    );
+
+  }
+}
+
+
+/*
+====================================================
+TRAINING SETTINGS
+====================================================
+*/
+
+async function loadTrainingSettings() {
+
+  try {
+
+    const response =
+      await fetch(
+        "/api/training/settings"
+      );
+
+    const data =
+      await response.json();
+
+    const training =
+      data.training || {};
+
+    displayResult(
+      "⚙️ Training Settings",
+      `
+
+        <div
+          style="
+            line-height:1.9;
+          "
+        >
+
+          <p>
+
+            <strong>
+              Starting Demo Balance:
+            </strong>
+
+            ${money(
+              training.startingBalance
+            )}
+
+          </p>
+
+          <p>
+
+            <strong>
+              Total Tasks:
+            </strong>
+
+            ${Number(
+              training.totalTasks || 40
+            )}
+
+          </p>
+
+          <p>
+
+            <strong>
+              Maximum Demo Deposit:
+            </strong>
+
+            ${money(
+              training.maxDeposit
+            )}
+
+          </p>
+
+          <p>
+
+            <strong>
+              Commission Per Task:
+            </strong>
+
+            ${money(
+              training.commissionPerTask
+            )}
+
+          </p>
+
+          <p>
+
+            <strong>
+              Training Products:
+            </strong>
+
+            ${
+              Array.isArray(
+                training.products
+              )
+                ? training.products.length
+                : 0
+            }
+
+          </p>
+
+        </div>
+
+        <div class="demo-warning">
+
+          ⚠️
+          <strong>
+            Training settings affect
+            the demonstration only.
+          </strong>
+
+          No real money is generated
+          by this training system.
+
+        </div>
+
+      `
+    );
+
+  } catch (err) {
+
+    console.error(err);
+
+    displayResult(
+      "Training Settings",
+      `
+        <p>
+          Unable to load training settings.
+        </p>
+      `
+    );
+
+  }
+                }
