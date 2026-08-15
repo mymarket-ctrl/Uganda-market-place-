@@ -2390,6 +2390,185 @@ function sellerWallet(
 
     });
 
+  }  // ================================================
+  // TRAINING DEMO WITHDRAWAL
+  // ================================================
+
+  if (
+    req.method === "POST" &&
+    url.pathname === "/api/training/withdraw"
+  ) {
+
+    const b = await body(req);
+
+    const userId =
+      String(b.userId || "").trim();
+
+    if (!userId) {
+
+      return json(res, 400, {
+        error:
+          "userId is required."
+      });
+
+    }
+
+    if (!Array.isArray(
+      db.trainingWithdrawalAccounts
+    )) {
+
+      db.trainingWithdrawalAccounts = [];
+
+    }
+
+    if (!Array.isArray(
+      db.trainingWithdrawals
+    )) {
+
+      db.trainingWithdrawals = [];
+
+    }
+
+    const account =
+      db.trainingWithdrawalAccounts.find(
+        x =>
+          x.userId === userId
+      );
+
+    if (!account) {
+
+      return json(res, 400, {
+        error:
+          "Please create your demo withdrawal account first."
+      });
+
+    }
+
+    let training =
+      db.trainingUsers.find(
+        x =>
+          x.userId === userId
+      );
+
+    if (!training) {
+
+      return json(res, 404, {
+        error:
+          "Training account not found."
+      });
+
+    }
+
+    const balance =
+      Number(
+        training.balance || 0
+      );
+
+    if (balance <= 0) {
+
+      return json(res, 400, {
+        error:
+          "Your demo balance is zero."
+      });
+
+    }
+
+    if (
+      training.status !== "completed"
+    ) {
+
+      return json(res, 400, {
+        error:
+          "Complete the training cycle before withdrawing."
+      });
+
+    }
+
+    /*
+      The withdrawal amount is ALWAYS the
+      exact demo balance.
+
+      The trainee cannot choose a larger
+      or smaller amount.
+    */
+
+    const amount =
+      balance;
+
+    const withdrawal = {
+
+      id:
+        id("demowd"),
+
+      userId,
+
+      traineeName:
+        account.name,
+
+      email:
+        account.email,
+
+      country:
+        account.country,
+
+      currency:
+        account.currency,
+
+      method:
+        account.method,
+
+      destination:
+        account.destination,
+
+      amount,
+
+      balanceBefore:
+        balance,
+
+      status:
+        "DEMO SUCCESSFUL",
+
+      reference:
+        "DEMO-WD-" +
+        crypto
+          .randomBytes(4)
+          .toString("hex")
+          .toUpperCase(),
+
+      createdAt:
+        new Date().toISOString()
+
+    };
+
+    db.trainingWithdrawals.unshift(
+      withdrawal
+    );
+
+    /*
+      This is a simulation only.
+
+      No real money is transferred.
+
+      The demo balance is reset to zero
+      after the simulated withdrawal.
+    */
+
+    training.balance = 0;
+
+    writeDB(db);
+
+    return json(res, 200, {
+
+      message:
+        "Demo withdrawal successful.",
+
+      warning:
+        "DEMO ONLY — NO REAL MONEY WAS TRANSFERRED.",
+
+      withdrawal
+
+    });
+
   }
   =====================================================
   START NEW TRAINING CYCLE
