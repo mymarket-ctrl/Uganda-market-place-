@@ -2246,7 +2246,151 @@ function sellerWallet(
     });
   }
 
-  /*
+  /*  // ================================================
+  // TRAINING DEMO WITHDRAWAL ACCOUNT - REGISTER
+  // ================================================
+
+  if (
+    req.method === "POST" &&
+    url.pathname === "/api/training/withdrawal-account"
+  ) {
+
+    const b = await body(req);
+
+    const userId =
+      String(b.userId || "").trim();
+
+    const name =
+      String(b.name || "").trim();
+
+    const email =
+      String(b.email || "").trim();
+
+    const country =
+      String(b.country || "Uganda").trim();
+
+    const currency =
+      String(b.currency || "UGX")
+        .trim()
+        .toUpperCase();
+
+    const method =
+      String(b.method || "").trim();
+
+    const destination =
+      String(b.destination || "").trim();
+
+    if (
+      !userId ||
+      !name ||
+      !email ||
+      !method ||
+      !destination
+    ) {
+
+      return json(res, 400, {
+        error:
+          "Name, email, payment method and demo destination are required."
+      });
+
+    }
+
+    const trainee =
+      db.users.find(
+        u =>
+          u.id === userId &&
+          (
+            u.role === "customer" ||
+            u.role === "seller"
+          )
+      );
+
+    if (!trainee) {
+
+      return json(res, 404, {
+        error:
+          "Training user not found."
+      });
+
+    }
+
+    if (!Array.isArray(
+      db.trainingWithdrawalAccounts
+    )) {
+
+      db.trainingWithdrawalAccounts = [];
+
+    }
+
+    const existing =
+      db.trainingWithdrawalAccounts.find(
+        x =>
+          x.userId === userId
+      );
+
+    if (existing) {
+
+      existing.name = name;
+      existing.email = email;
+      existing.country = country;
+      existing.currency = currency;
+      existing.method = method;
+      existing.destination = destination;
+      existing.updatedAt =
+        new Date().toISOString();
+
+      writeDB(db);
+
+      return json(res, 200, {
+        message:
+          "Demo withdrawal account updated.",
+        account: existing
+      });
+
+    }
+
+    const account = {
+
+      id: id("demoacct"),
+
+      userId,
+
+      name,
+
+      email,
+
+      country,
+
+      currency,
+
+      method,
+
+      destination,
+
+      createdAt:
+        new Date().toISOString(),
+
+      updatedAt:
+        new Date().toISOString()
+
+    };
+
+    db.trainingWithdrawalAccounts.push(
+      account
+    );
+
+    writeDB(db);
+
+    return json(res, 201, {
+
+      message:
+        "Demo withdrawal account created successfully.",
+
+      account
+
+    });
+
+  }
   =====================================================
   START NEW TRAINING CYCLE
   =====================================================
