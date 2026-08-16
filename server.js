@@ -1320,32 +1320,9 @@ if (
   });
 }
 
-/*
-=====================================================
-CREATE SELLER WITHDRAWAL
-=====================================================
-*/
 
-const sellerId = String(b.sellerId || "");
-const amount = money(b.amount);
 
-if (!sellerId) {
-  return json(res, 400, {
-    error: "sellerId is required"
-  });
-}
 
-const seller =
-  findUser(db, sellerId);
-
-    if (
-      !seller ||
-      seller.role !== "seller"
-    ) {
-      return json(res, 403, {
-        error: "Seller account required"
-      });
-    }
 
     if (
       !Number.isFinite(amount) ||
