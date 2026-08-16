@@ -1333,8 +1333,7 @@ if (
       });
     }
 
-    const wallet =
-      sellerWallet(db, sellerId);
+  
 
     if (
       amount >
