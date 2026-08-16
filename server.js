@@ -71,9 +71,15 @@ const seed = {
     }
   ],
 
-  orders: [],
+    orders: [],
 
   withdrawals: [],
+
+  supportRequests: [],
+
+  referrals: [],
+
+  withdrawalDetails: [],
 
   training: {
     startingBalance: 0,
