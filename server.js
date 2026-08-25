@@ -2329,7 +2329,50 @@ if (
     request
 
   });
-		}
+		}// ================================================
+// ADMIN: VIEW TRAINING SUPPORT REQUESTS
+// ================================================
+
+if (
+  req.method === "GET" &&
+  url.pathname === "/api/training/support"
+) {
+
+  const adminEmail =
+    String(
+      url.searchParams.get("adminEmail") || ""
+    ).trim();
+
+  const adminPassword =
+    String(
+      url.searchParams.get("adminPassword") || ""
+    );
+
+  const admin =
+    isAdmin(
+      db,
+      adminEmail,
+      adminPassword
+    );
+
+  if (!admin) {
+    return json(res, 403, {
+      error:
+        "Administrator authorization required"
+    });
+  }
+
+  if (!Array.isArray(
+    db.supportRequests
+  )) {
+    db.supportRequests = [];
+  }
+
+  return json(res, 200, {
+    requests:
+      db.supportRequests
+  });
+}
     // ================================================
   // TRAINING DEMO WITHDRAWAL ACCOUNT - REGISTER
   // ================================================
