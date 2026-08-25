@@ -152,7 +152,13 @@ Trainees who reach a negative demo balance will appear here.
 LOAD TRAINEES
 </button>
 
-<div id="trainees"></div>
+<div id="trainees"></div><hr>
+
+<h2>Agent Support Requests</h2>
+
+<div id="supportRequests">
+  Loading support requests...
+</div>
 
 </div>
 
@@ -613,7 +619,118 @@ async function clearTrainee(userId){
 
 
 loadSettings();
+async function loadSupportRequests() {
 
+  const admin = getAdmin();
+
+  const container =
+    document.getElementById("supportRequests");
+
+  if (!admin) {
+    container.innerHTML =
+      "<p>Administrator login required.</p>";
+    return;
+  }
+
+  try {
+
+    const response =
+      await fetch(
+        "/api/training/support?adminEmail=" +
+        encodeURIComponent(admin.email) +
+        "&adminPassword=" +
+        encodeURIComponent(admin.password || "")
+      );
+
+    const data =
+      await response.json();
+
+    if (!response.ok) {
+
+      container.innerHTML =
+        "<p>❌ " +
+        (data.error ||
+        "Unable to load support requests.") +
+        "</p>";
+
+      return;
+    }
+
+    const requests =
+      data.requests || [];
+
+    if (!requests.length) {
+
+      container.innerHTML =
+        "<p>No support requests found.</p>";
+
+      return;
+    }
+
+    container.innerHTML =
+      requests.map(request => `
+        <div style="
+          background:#fff;
+          padding:16px;
+          margin:12px 0;
+          border-radius:10px;
+          box-shadow:0 2px 8px rgba(0,0,0,.08);
+        ">
+
+          <strong>
+            ${escapeHtml(
+              request.username || "Unknown"
+            )}
+          </strong>
+
+          <p>
+            ${escapeHtml(
+              request.complaint || ""
+            )}
+          </p>
+
+          <small>
+            Status:
+            <strong>
+              ${escapeHtml(
+                request.status || "Pending"
+              )}
+            </strong>
+          </small>
+
+          <br>
+
+          <small>
+            ${escapeHtml(
+              request.createdAt || ""
+            )}
+          </small>
+
+        </div>
+      `).join("");
+
+  } catch (error) {
+
+    console.error(error);
+
+    container.innerHTML =
+      "<p>❌ Unable to connect to support service.</p>";
+  }
+}
+
+
+function escapeHtml(value) {
+
+  return String(value || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+
+loadSupportRequests();
 </script>
 
 </body>
