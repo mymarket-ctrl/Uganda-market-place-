@@ -2254,7 +2254,82 @@ if (
         "UGX"
     });
   }
+// ================================================
+// TRAINING AGENT SUPPORT
+// ================================================
 
+if (
+  req.method === "POST" &&
+  url.pathname === "/api/training/support"
+) {
+
+  const b = await body(req);
+
+  const userId =
+    String(b.userId || "").trim();
+
+  const username =
+    String(b.username || "").trim();
+
+  const complaint =
+    String(b.complaint || "").trim();
+
+  if (!username || !complaint) {
+    return json(res, 400, {
+      error:
+        "Username and complaint are required."
+    });
+  }
+
+  if (!Array.isArray(
+    db.supportRequests
+  )) {
+    db.supportRequests = [];
+  }
+
+  const request = {
+
+    id:
+      id("support"),
+
+    userId,
+
+    username,
+
+    complaint,
+
+    status:
+      "Pending",
+
+    createdAt:
+      new Date().toISOString(),
+
+    resolvedAt:
+      null,
+
+    resolvedBy:
+      null,
+
+    adminNote:
+      ""
+
+  };
+
+  db.supportRequests.unshift(
+    request
+  );
+
+  writeDB(db);
+
+  return json(res, 201, {
+
+    message:
+      "Support request submitted successfully.",
+
+    request
+
+  });
+		}
     // ================================================
   // TRAINING DEMO WITHDRAWAL ACCOUNT - REGISTER
   // ================================================
