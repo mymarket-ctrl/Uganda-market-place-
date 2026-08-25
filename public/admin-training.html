@@ -399,11 +399,39 @@ async function saveSettings(){
 
   try{
 
-    const response =
-      await fetch(
-        "/api/training/admin-trainees?adminEmail=" +
-        encodeURIComponent(admin.email)
-      );
+    const adminPassword =
+  document.getElementById(
+    "adminPassword"
+  ).value;
+
+if (!adminPassword) {
+
+  container.innerHTML =
+    "<p>❌ Enter the administrator password first.</p>";
+
+  return;
+}
+
+const adminPassword =
+  document.getElementById(
+    "adminPassword"
+  ).value;
+
+if (!adminPassword) {
+
+  container.innerHTML =
+    "<p>❌ Enter the administrator password first.</p>";
+
+  return;
+}
+
+const response =
+  await fetch(
+    "/api/training/support?adminEmail=" +
+    encodeURIComponent(admin.email) +
+    "&adminPassword=" +
+    encodeURIComponent(adminPassword)
+  );
 
 
     const data =
@@ -573,10 +601,19 @@ async function clearTrainee(userId){
           },
 
           body:
-            JSON.stringify({
-              userId:userId,
-              demoBalance:amount
-            })
+  JSON.stringify({
+    userId:userId,
+
+    demoBalance:amount,
+
+    adminEmail:
+      getAdmin().email,
+
+    adminPassword:
+      document.getElementById(
+        "adminPassword"
+      ).value
+  })
         }
       );
 
